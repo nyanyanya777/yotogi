@@ -1,0 +1,17 @@
+# --- 巨大なスクレイプ生キャッシュ（再生成可能・配布対象外） ---
+data/raw/
+data/raw_net_urls.txt
+
+# --- 設計アセット（本リポジトリの目的=データ/民俗解説の引き渡しには不要・重い） ---
+mobile/
+mood/
+mood2/
+variants/
+artboard.html
+artboard_*.png
+*.pen
+
+# --- OS/エディタ ---
+.DS_Store
+node_modules/
+*.log
