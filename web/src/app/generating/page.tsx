@@ -3,26 +3,35 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import StatusBar from "@/components/StatusBar";
+import GenerateError, { type GenerateErrorKind } from "@/components/GenerateError";
 import {
   loadTags,
   loadStory,
   saveStory,
   saveFolklore,
+  addHistory,
+  attachFolkloreToHistory,
+  loadHistory,
 } from "@/lib/yotogiStorage";
 
 /**
- * Generating (`/generating`) — dawn 演出（4フレーム）
+ * Generating (`/generating`) — dawn 演出（4フレーム）+ 失敗フィードバック
  *
  * クエリ `?next=story` or `?next=folklore` で遷移先を切替。
- * dawn-1 → dawn-2 → dawn-3 → dawn-4 を 2000ms ずつ自動進行し、dawn-4 完了で
- * `router.replace(next)`。フレーム間の bg / text 色は 1600ms `cubic-bezier(0.4,0,0.2,1)` で
- * CSS transition。漢字は中央 48px Shippori Mincho Medium。プログレは 1px × 200px。
+ * dawn-1 → dawn-2 → dawn-3 → dawn-4 を 2000ms ずつ自動進行する。
+ *
+ * 生成結果の判定:
+ *   - レスポンスヘッダ `x-yotogi-source` が `fallback-` で始まる → 失敗（固定文を握り潰さない）
+ *   - fetch 自体が失敗（ネットワーク不通・timeout/abort）→ 失敗
+ *   - tags / story が欠落 → empty（/motif へ誘導）
+ *   - 成功 → 怪談/解説を保存し、履歴に積んで next へ遷移
+ *
+ * 設計判断（dawn 中の失敗）: 失敗が dawn 途中で判明しても演出は中断せず、
+ * dawn-4（解）まで見せ切ってからエラー画面に切り替える。暗→明の儀式を
+ * 壊さず、「明けた先に怪が立ち上がらなかった」という世界観に馴染ませる。
  *
  * - AbortController で fetch を中断 (画面離脱・タイムアウト時)
- * - prefers-reduced-motion 尊重
- * - Esc キーで前画面に戻れる (a11y 脱出)
- *
- * 仕様: /root/YOTOGI_IMPLEMENTATION_SPEC.md §3.3
+ * - prefers-reduced-motion 尊重 / Esc キーで前画面に戻れる (a11y 脱出)
  */
 
 type DawnFrame = {
@@ -43,7 +52,20 @@ const FRAMES: DawnFrame[] = [
 const FRAME_DURATION_MS = 2000;
 const TRANSITION_MS_DEFAULT = 1600;
 const EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
-const API_MAX_WAIT_MS = 8000;
+const API_MAX_WAIT_MS = 15000;
+
+// API 呼び出しの結末。dawn 完了後にこれを見てエラー or 遷移を決める。
+type Outcome =
+  | { kind: "pending" }
+  | { kind: "ok" }
+  | { kind: "empty" } // tags / story 欠落
+  | { kind: "error"; reason: GenerateErrorKind };
+
+function classifyFallbackSource(src: string): GenerateErrorKind {
+  if (src === "fallback-no-key") return "no-key";
+  // fallback-error / fallback-gate-* / その他はまとめて生成失敗扱い
+  return "error";
+}
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(false);
@@ -64,45 +86,53 @@ function DawnSequence() {
   const reducedMotion = usePrefersReducedMotion();
   const transitionMs = reducedMotion ? 0 : TRANSITION_MS_DEFAULT;
 
-  // 既定遷移先: story
-  const next: string =
-    nextParam === "folklore"
-      ? "/folklore"
-      : nextParam === "story"
-        ? "/story"
-        : "/story";
+  const phase: "story" | "folklore" =
+    nextParam === "folklore" ? "folklore" : "story";
+  const next = phase === "folklore" ? "/folklore" : "/story";
 
   const [index, setIndex] = useState(0);
   const [apiDone, setApiDone] = useState(false);
-  const apiStarted = useRef(false);
+  const [outcome, setOutcome] = useState<Outcome>({ kind: "pending" });
+  // dawn 演出を見せ切ったか。エラーは演出完了後にのみ提示する。
+  const [dawnComplete, setDawnComplete] = useState(false);
   const mountedRef = useRef(true);
 
   // dawn 演出と並列で API 呼び出しを走らせる。
-  // AbortController で画面離脱・タイムアウト時に確実に中断する。
+  //
+  // React StrictMode（dev）では effect が mount→unmount→remount で 2 回走る。
+  // cleanup で controller.abort() すると最初の fetch が中断されるため、
+  // 「画面離脱由来の abort（=cleanup）」と「timeout 由来の abort」を区別する必要がある。
+  //   - cancelled: この effect インスタンスの cleanup が走ったか（= 離脱）。
+  //   - timedOut : API_MAX_WAIT_MS 経過で能動的に abort したか（= 本物のタイムアウト）。
+  // abort が cancelled 由来なら何も報告しない（StrictMode 再マウントで再実行される）。
+  // apiStarted は撤廃: 再マウント時に再 fetch させる。fallback/履歴は冪等
+  // （addHistory は直近重複を弾く）なので二重実行は安全。
   useEffect(() => {
-    if (apiStarted.current) return;
-    apiStarted.current = true;
+    let cancelled = false;
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(
-      () => controller.abort(),
-      API_MAX_WAIT_MS,
-    );
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, API_MAX_WAIT_MS);
 
-    const safeSet = (setter: () => void) => {
-      if (mountedRef.current && !controller.signal.aborted) setter();
+    const finish = (o: Outcome) => {
+      if (!cancelled) {
+        setOutcome(o);
+        setApiDone(true);
+      }
     };
 
     const run = async () => {
       try {
         const tags = loadTags();
         if (!tags) {
-          safeSet(() => setApiDone(true));
+          finish({ kind: "empty" });
           return;
         }
-        if (nextParam === "folklore") {
+
+        if (phase === "folklore") {
           const story = loadStory();
           if (!story) {
-            safeSet(() => setApiDone(true));
+            finish({ kind: "empty" });
             return;
           }
           const res = await fetch("/api/generate-folklore", {
@@ -115,12 +145,26 @@ function DawnSequence() {
             }),
             signal: controller.signal,
           });
-          if (res.ok && !controller.signal.aborted) {
-            const f = await res.json();
-            if (mountedRef.current && !controller.signal.aborted) {
-              saveFolklore(f);
+          const src = res.headers.get("x-yotogi-source") ?? "";
+          if (!res.ok) {
+            finish({ kind: "error", reason: "error" });
+            return;
+          }
+          if (src.startsWith("fallback")) {
+            finish({ kind: "error", reason: classifyFallbackSource(src) });
+            return;
+          }
+          const f = await res.json();
+          if (!cancelled) {
+            saveFolklore(f);
+            // 履歴の直近エントリ（=この怪談）に解説を後付けする
+            const list = loadHistory();
+            const head = list[0];
+            if (head && head.title === story.title && head.body === story.body) {
+              attachFolkloreToHistory(head.id, f);
             }
           }
+          finish({ kind: "ok" });
         } else {
           const res = await fetch("/api/generate-story", {
             method: "POST",
@@ -128,28 +172,43 @@ function DawnSequence() {
             body: JSON.stringify({ tags }),
             signal: controller.signal,
           });
-          if (res.ok && !controller.signal.aborted) {
-            const s = await res.json();
-            if (mountedRef.current && !controller.signal.aborted) {
-              saveStory(s);
-            }
+          const src = res.headers.get("x-yotogi-source") ?? "";
+          if (!res.ok) {
+            finish({ kind: "error", reason: "error" });
+            return;
           }
+          if (src.startsWith("fallback")) {
+            finish({ kind: "error", reason: classifyFallbackSource(src) });
+            return;
+          }
+          const s = await res.json();
+          if (!cancelled) {
+            saveStory(s);
+            addHistory({ tags, title: s.title, body: s.body });
+          }
+          finish({ kind: "ok" });
         }
       } catch {
-        // abort 含むネットワークエラーはフロントの fallback 表示に委ねる
+        // fetch が投げるのは abort（timeout / 画面離脱）か通信不通。
+        //   - cancelled（cleanup 由来の abort）→ 何も報告しない。
+        //     StrictMode の再マウントで run() が再実行されるのを待つ。
+        //   - timeout / 通信不通 → network エラー（Figma 134:56 / 霧）。
+        if (!cancelled) {
+          finish({ kind: "error", reason: "network" });
+        }
       } finally {
-        safeSet(() => setApiDone(true));
+        window.clearTimeout(timeoutId);
       }
     };
     run();
 
     return () => {
+      cancelled = true;
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [nextParam]);
+  }, [phase]);
 
-  // アンマウント検出用 — clean cleanup
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -165,27 +224,27 @@ function DawnSequence() {
       }, FRAME_DURATION_MS);
       return () => window.clearTimeout(t);
     }
-    let cancelled = false;
-    const startedAt = performance.now();
-    let timer: number | undefined;
-    const tick = () => {
-      if (cancelled || !mountedRef.current) return;
-      if (apiDone || performance.now() - startedAt > API_MAX_WAIT_MS) {
-        router.replace(next);
-        return;
-      }
-      timer = window.setTimeout(tick, 250);
-    };
-    const initial = window.setTimeout(tick, FRAME_DURATION_MS);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(initial);
-      if (timer !== undefined) window.clearTimeout(timer);
-    };
-  }, [index, next, router, apiDone]);
+    // 最終フレーム（解）を一定時間見せたら dawn 完了とみなす
+    const t = window.setTimeout(() => {
+      if (mountedRef.current) setDawnComplete(true);
+    }, FRAME_DURATION_MS);
+    return () => window.clearTimeout(t);
+  }, [index]);
 
-  // Esc キーで脱出 (a11y)。直接エントリ (history.length <= 2) で
-  // about:blank に戻らないよう /motif に replace する
+  // dawn 完了 & API 完了の両方が揃ったら、結果に応じて遷移 or エラー提示。
+  useEffect(() => {
+    if (!dawnComplete) return;
+    if (!apiDone) {
+      // dawn は終わったが API がまだ。timeout(15s) までは「解」のまま待つ。
+      return;
+    }
+    if (outcome.kind === "ok") {
+      router.replace(next);
+    }
+    // empty / error は描画側で GenerateError（空状態 / 失敗）を出す（遷移しない）
+  }, [dawnComplete, apiDone, outcome, next, router]);
+
+  // Esc キーで脱出 (a11y)。
   const handleSkip = useCallback(() => {
     if (typeof window !== "undefined" && window.history.length > 2) {
       router.back();
@@ -204,6 +263,39 @@ function DawnSequence() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [handleSkip]);
+
+  // 再試行: 同じ phase で生成し直す（履歴・遷移ロジックを再走させる）
+  const handleRetry = useCallback(() => {
+    router.replace(`/generating?next=${phase}&r=${Date.now()}`);
+  }, [router, phase]);
+
+  // ── 空状態（モチーフ未選択）──
+  // tags が無ければ生成のしようがない。dawn 演出を待たず即座に
+  // EmptyState-NoMotif (Figma 134:57) を提示し、モチーフ選択へ誘導する。
+  if (outcome.kind === "empty") {
+    return (
+      <GenerateError
+        phase={phase}
+        kind="empty"
+        onRetry={() => router.replace("/motif")}
+        onBackToMotif={() => router.replace("/motif")}
+      />
+    );
+  }
+
+  // ── エラー表示（dawn 完了後にのみ） ──
+  // 設計判断: 失敗が dawn 途中で判明しても暗→明の儀式は中断せず、
+  // 「解」まで見せ切ってから ErrorState (134:55/56) に切り替える。
+  if (dawnComplete && apiDone && outcome.kind === "error") {
+    return (
+      <GenerateError
+        phase={phase}
+        kind={outcome.reason}
+        onRetry={handleRetry}
+        onBackToMotif={() => router.replace("/motif")}
+      />
+    );
+  }
 
   const frame = FRAMES[index];
 
@@ -224,7 +316,7 @@ function DawnSequence() {
         <StatusBarTimeOnly textColor={frame.text} transitionMs={transitionMs} />
       </div>
 
-      {/* スキップ (Esc) — a11y 脱出。SR ユーザー向けに sr-only テキストも提示 */}
+      {/* スキップ (Esc) — a11y 脱出。 */}
       <button
         type="button"
         onClick={handleSkip}
@@ -235,7 +327,7 @@ function DawnSequence() {
         スキップ
       </button>
 
-      {/* 漢字一字 — 画面中央。aria-hidden で読まない、SR は span.sr-only から読む */}
+      {/* 漢字一字 — 画面中央。 */}
       <span
         aria-hidden="true"
         className="font-mincho font-medium text-[48px] leading-none"
@@ -249,7 +341,7 @@ function DawnSequence() {
         {frame.kanji}
       </span>
 
-      {/* sr-only ステータス。aria-live で SR に「進捗 N%」を伝える */}
+      {/* sr-only ステータス。 */}
       <span className="sr-only" aria-live="polite">
         {`生成進捗 ${frame.progress}%`}
       </span>
@@ -281,7 +373,6 @@ function DawnSequence() {
 
 /**
  * dawn 演出中のステータスバー — 時刻 (9:41) のみ表示。
- * フレームの text 色を currentColor に流し込んで時刻文字も同期させる。
  */
 function StatusBarTimeOnly({
   textColor,
@@ -308,7 +399,6 @@ function StatusBarTimeOnly({
 }
 
 export default function GeneratingPage() {
-  // useSearchParams は Suspense 境界を要求する（Next.js App Router）
   return (
     <Suspense
       fallback={

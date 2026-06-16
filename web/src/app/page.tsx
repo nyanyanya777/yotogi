@@ -1,6 +1,7 @@
 import Link from "next/link";
 import StatusBar from "@/components/StatusBar";
 import PCFrame from "@/components/PCFrame";
+import HistoryStrip from "@/components/HistoryStrip";
 
 /**
  * Splash (Screen#Splash, Figma 9:2)
@@ -49,6 +50,9 @@ export default function SplashPage() {
             >
               作成する
             </Link>
+
+            {/* 読み返す導線 — 履歴がある時だけ出る（client island） */}
+            <HistoryStrip />
           </div>
         </main>
       </div>

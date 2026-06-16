@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import StatusBar from "@/components/StatusBar";
 import ChevronLeftIcon from "@/components/ChevronLeftIcon";
@@ -9,6 +10,7 @@ import FolkloreGlosses from "@/components/FolkloreGlosses";
 import {
   loadFolklore,
   loadStory,
+  loadTags,
   type StoredFolklore,
 } from "@/lib/yotogiStorage";
 
@@ -38,6 +40,7 @@ const FALLBACK_FOLKLORE: StoredFolklore = {
 };
 
 export default function FolkloreAnalysisPage() {
+  const router = useRouter();
   const [title, setTitle] = useState<string>(FALLBACK_TITLE);
   const [excerpt, setExcerpt] = useState<string>(FALLBACK_EXCERPT);
   const [folklore, setFolklore] = useState<StoredFolklore>(FALLBACK_FOLKLORE);
@@ -45,6 +48,12 @@ export default function FolkloreAnalysisPage() {
   useEffect(() => {
     // SSR で fallback を描画して hydration mismatch を避けるため、
     // localStorage 読み込みは意図的に effect 内で行う
+
+    // 空状態ガード: 怪談も解説も無いまま直接来た場合は /motif へ誘導
+    if (!loadStory() && !loadFolklore() && !loadTags()) {
+      router.replace("/motif");
+      return;
+    }
     const s = loadStory();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (s?.title) setTitle(s.title);
@@ -52,13 +61,11 @@ export default function FolkloreAnalysisPage() {
       // night-fragment は collapsed-body として先頭付近のみ表示する。
       // 本文先頭から 2 段落程度を 1 行に圧縮して見せる
       const cleaned = s.body.split(/\n\n+/).slice(0, 2).join(" ");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExcerpt(cleaned);
     }
     const f = loadFolklore();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (f) setFolklore(f);
-  }, []);
+  }, [router]);
 
   const sections: { label: string; body: string }[] = [
     { label: "【伝承の型】", body: folklore.denshou_no_kata },

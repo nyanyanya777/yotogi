@@ -145,14 +145,18 @@ export default function MotifSelectionPage() {
               </h2>
               {/* chip-grid — gap-12 wrap */}
               <div className="flex flex-wrap gap-3">
-                {cat.chips.map((chip) => (
-                  <Chip
-                    key={chip}
-                    label={chip}
-                    selected={selected.includes(chip)}
-                    onClick={() => toggle(chip)}
-                  />
-                ))}
+                {cat.chips.map((chip) => {
+                  const isSelected = selected.includes(chip);
+                  return (
+                    <Chip
+                      key={chip}
+                      label={chip}
+                      selected={isSelected}
+                      disabled={isReady && !isSelected}
+                      onClick={() => toggle(chip)}
+                    />
+                  );
+                })}
               </div>
             </section>
           ))}

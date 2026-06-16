@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import StatusBar from "@/components/StatusBar";
 import IconButton from "@/components/IconButton";
 import ShareIcon from "@/components/ShareIcon";
@@ -13,6 +13,11 @@ import {
   clearFolklore,
   clearStory,
   loadStory,
+  loadTags,
+  getHistoryEntry,
+  saveStory,
+  saveTags,
+  saveFolklore,
   type StoredStory,
 } from "@/lib/yotogiStorage";
 
@@ -36,18 +41,41 @@ const FALLBACK_STORY: StoredStory = {
     "縁に手をかけ、暗い水面を見下ろす。そこに、白い顔がひとつ。それは、私を見上げて、たしかに笑った——",
 };
 
-export default function StoryReadingPage() {
+function StoryReading() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const historyId = searchParams.get("h");
   const [story, setStory] = useState<StoredStory>(FALLBACK_STORY);
 
   useEffect(() => {
     // SSR で fallback を出して hydration mismatch を避けるため、
     // localStorage 読み込みは意図的に effect 内で行う
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
+    // 履歴からの読み返し: ?h=<id> が指定されたら、その怪談を
+    // current スロット（story/tags/folklore）に復元してから表示する。
+    // こうすることで「解説を作成」や共有も読み返した怪談に対して機能する。
+    if (historyId) {
+      const entry = getHistoryEntry(historyId);
+      if (entry) {
+        const restored = { title: entry.title, body: entry.body };
+        saveStory(restored);
+        saveTags(entry.tags);
+        if (entry.folklore) saveFolklore(entry.folklore);
+        else clearFolklore();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setStory(restored);
+        return;
+      }
+    }
+
+    // 空状態ガード: tags も story も無いまま直接来た場合は /motif へ誘導
     const s = loadStory();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!s && !loadTags()) {
+      router.replace("/motif");
+      return;
+    }
     if (s) setStory(s);
-  }, []);
+  }, [historyId, router]);
 
   // 段落分割（モデル出力は \n\n 区切りを想定）。
   const paragraphs = story.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
@@ -134,5 +162,20 @@ export default function StoryReadingPage() {
       </footer>
       </div>
     </PCFrame>
+  );
+}
+
+export default function StoryReadingPage() {
+  // useSearchParams は Suspense 境界を要求する（Next.js App Router）
+  return (
+    <Suspense
+      fallback={
+        <PCFrame mode="night" bgImage="/images/ukiyoe-tomomori.jpg">
+          <div className="bg-sumi-0 mx-auto min-h-screen w-full max-w-[402px]" />
+        </PCFrame>
+      }
+    >
+      <StoryReading />
+    </Suspense>
   );
 }
