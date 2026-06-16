@@ -15,20 +15,25 @@ import {
 } from "@/lib/yotogiStorage";
 
 /**
- * Generating (`/generating`) — dawn 演出（4フレーム）+ 失敗フィードバック
+ * Generating (`/generating`) — 二相の待機演出 + 失敗フィードバック
  *
- * クエリ `?next=story` or `?next=folklore` で遷移先を切替。
- * dawn-1 → dawn-2 → dawn-3 → dawn-4 を 2000ms ずつ自動進行する。
+ * クエリ `?next=story` or `?next=folklore` で遷移先と演出を切替。
  *
- * 生成結果の判定:
+ *   - `?next=story`（タグ→怪談）: 「夜の簡易ローダー」。dawn の夜明けは使わない。
+ *      暗い夕闇のトーンのまま、漢字「怪」が静かに息づく控えめな待機。
+ *      「夜に入っていく」雰囲気。明るくしない・夜明けにしない。
+ *   - `?next=folklore`（解説を作成）: dawn 演出（暗→薄→明→解、4フレーム計8秒）。
+ *      ここが夜明け＝解説（昼）への移行。dawn-1 → dawn-4 を 2000ms ずつ自動進行。
+ *
+ * 生成結果の判定（両パス共通）:
  *   - レスポンスヘッダ `x-yotogi-source` が `fallback-` で始まる → 失敗（固定文を握り潰さない）
  *   - fetch 自体が失敗（ネットワーク不通・timeout/abort）→ 失敗
  *   - tags / story が欠落 → empty（/motif へ誘導）
  *   - 成功 → 怪談/解説を保存し、履歴に積んで next へ遷移
  *
- * 設計判断（dawn 中の失敗）: 失敗が dawn 途中で判明しても演出は中断せず、
- * dawn-4（解）まで見せ切ってからエラー画面に切り替える。暗→明の儀式を
- * 壊さず、「明けた先に怪が立ち上がらなかった」という世界観に馴染ませる。
+ * 設計判断（演出中の失敗）: 失敗が演出途中で判明しても演出は中断せず、
+ * 最小表示（dawn なら「解」まで／夜ローダーなら一定時間）を見せ切ってから
+ * エラー画面に切り替える。儀式を壊さず世界観に馴染ませる。
  *
  * - AbortController で fetch を中断 (画面離脱・タイムアウト時)
  * - prefers-reduced-motion 尊重 / Esc キーで前画面に戻れる (a11y 脱出)
@@ -53,6 +58,11 @@ const FRAME_DURATION_MS = 2000;
 const TRANSITION_MS_DEFAULT = 1600;
 const EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
 const API_MAX_WAIT_MS = 15000;
+// 夜ローダー（story）の最小表示時間。短く控えめに見せ切ってから遷移/失敗提示する。
+const NIGHT_LOADER_MIN_MS = 1600;
+// 夜ローダーの夕闇トーン（dawn-1「暗」相当）。直書きせず token から引く。
+const NIGHT_BG = "var(--color-sumi-0)";
+const NIGHT_TEXT = "var(--color-sumi-3)";
 
 // API 呼び出しの結末。dawn 完了後にこれを見てエラー or 遷移を決める。
 type Outcome =
@@ -93,8 +103,9 @@ function DawnSequence() {
   const [index, setIndex] = useState(0);
   const [apiDone, setApiDone] = useState(false);
   const [outcome, setOutcome] = useState<Outcome>({ kind: "pending" });
-  // dawn 演出を見せ切ったか。エラーは演出完了後にのみ提示する。
-  const [dawnComplete, setDawnComplete] = useState(false);
+  // 演出を最小時間見せ切ったか。エラーは演出完了後にのみ提示する。
+  // folklore=dawn-4（解）到達、story=夜ローダーの最小表示時間経過。
+  const [introComplete, setIntroComplete] = useState(false);
   const mountedRef = useRef(true);
 
   // dawn 演出と並列で API 呼び出しを走らせる。
@@ -216,8 +227,16 @@ function DawnSequence() {
     };
   }, []);
 
-  // フレーム自動進行
+  // 演出の進行。
+  //   - story:    夜ローダーを最小時間だけ見せ、introComplete を立てる（フレーム遷移なし）。
+  //   - folklore: dawn-1 → dawn-4 を自動進行し、最終フレーム（解）到達で introComplete。
   useEffect(() => {
+    if (phase === "story") {
+      const t = window.setTimeout(() => {
+        if (mountedRef.current) setIntroComplete(true);
+      }, NIGHT_LOADER_MIN_MS);
+      return () => window.clearTimeout(t);
+    }
     if (index < FRAMES.length - 1) {
       const t = window.setTimeout(() => {
         if (mountedRef.current) setIndex((i) => i + 1);
@@ -226,23 +245,23 @@ function DawnSequence() {
     }
     // 最終フレーム（解）を一定時間見せたら dawn 完了とみなす
     const t = window.setTimeout(() => {
-      if (mountedRef.current) setDawnComplete(true);
+      if (mountedRef.current) setIntroComplete(true);
     }, FRAME_DURATION_MS);
     return () => window.clearTimeout(t);
-  }, [index]);
+  }, [index, phase]);
 
-  // dawn 完了 & API 完了の両方が揃ったら、結果に応じて遷移 or エラー提示。
+  // 演出完了 & API 完了の両方が揃ったら、結果に応じて遷移 or エラー提示。
   useEffect(() => {
-    if (!dawnComplete) return;
+    if (!introComplete) return;
     if (!apiDone) {
-      // dawn は終わったが API がまだ。timeout(15s) までは「解」のまま待つ。
+      // 演出は終わったが API がまだ。timeout(15s) までは待機画面のまま待つ。
       return;
     }
     if (outcome.kind === "ok") {
       router.replace(next);
     }
     // empty / error は描画側で GenerateError（空状態 / 失敗）を出す（遷移しない）
-  }, [dawnComplete, apiDone, outcome, next, router]);
+  }, [introComplete, apiDone, outcome, next, router]);
 
   // Esc キーで脱出 (a11y)。
   const handleSkip = useCallback(() => {
@@ -283,10 +302,10 @@ function DawnSequence() {
     );
   }
 
-  // ── エラー表示（dawn 完了後にのみ） ──
-  // 設計判断: 失敗が dawn 途中で判明しても暗→明の儀式は中断せず、
-  // 「解」まで見せ切ってから ErrorState (134:55/56) に切り替える。
-  if (dawnComplete && apiDone && outcome.kind === "error") {
+  // ── エラー表示（演出完了後にのみ） ──
+  // 設計判断: 失敗が演出途中で判明しても儀式は中断せず、最小表示を
+  // 見せ切ってから ErrorState (134:55/56) に切り替える。
+  if (introComplete && apiDone && outcome.kind === "error") {
     return (
       <GenerateError
         phase={phase}
@@ -297,6 +316,64 @@ function DawnSequence() {
     );
   }
 
+  // ── 夜の簡易ローダー（story） ──
+  // dawn の4コマ夜明けは使わない。暗い夕闇のトーンのまま、漢字「怪」が
+  // 静かに息づく控えめな待機。明るくしない・夜明けにしない。
+  if (phase === "story") {
+    return (
+      <main
+        className="relative flex min-h-screen w-full flex-col items-center justify-center"
+        style={{ backgroundColor: NIGHT_BG, color: NIGHT_TEXT }}
+        aria-label="怪談を生成中"
+      >
+        {/* StatusBar は absolute で外し、漢字の中央計算から除外する */}
+        <div className="absolute top-0 left-0 right-0">
+          <StatusBarTimeOnly textColor={NIGHT_TEXT} transitionMs={0} />
+        </div>
+
+        {/* スキップ (Esc) — a11y 脱出。 */}
+        <button
+          type="button"
+          onClick={handleSkip}
+          aria-label="生成を中止して戻る"
+          className="absolute right-4 top-4 rounded-full px-3 py-1 text-[12px] opacity-60 transition-opacity hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+          style={{ color: NIGHT_TEXT, borderColor: NIGHT_TEXT }}
+        >
+          スキップ
+        </button>
+
+        {/* 漢字一字「怪」— 中央で静かに息づく（reduced-motion 時は静止）。 */}
+        <span
+          aria-hidden="true"
+          className="yotogi-night-breathe font-mincho font-medium text-[48px] leading-none"
+          style={{ color: NIGHT_TEXT }}
+        >
+          怪
+        </span>
+
+        {/* sr-only ステータス。 */}
+        <span className="sr-only" role="status" aria-live="polite">
+          怪談を生成しています
+        </span>
+
+        {/* 細い線の上を、ほのかな明かりが流れるだけの最小限の動き。
+            進行度は不確定なので indeterminate な progressbar。 */}
+        <div
+          className="relative mt-10 h-px w-[200px] overflow-hidden"
+          style={{ backgroundColor: "rgba(160,152,144,0.18)" }}
+          role="progressbar"
+          aria-label="生成中"
+        >
+          <div
+            className="yotogi-night-drift absolute inset-y-0 left-0 w-1/3"
+            style={{ backgroundColor: NIGHT_TEXT }}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  // ── dawn 演出（folklore = 解説への夜明け） ──
   const frame = FRAMES[index];
 
   return (
@@ -309,7 +386,7 @@ function DawnSequence() {
         transitionDuration: `${transitionMs}ms`,
         transitionTimingFunction: EASING,
       }}
-      aria-label="物語を生成中"
+      aria-label="解説を生成中"
     >
       {/* StatusBar は absolute で外し、漢字の中央計算から除外する */}
       <div className="absolute top-0 left-0 right-0">

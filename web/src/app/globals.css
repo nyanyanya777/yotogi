@@ -75,3 +75,46 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ---------------------------------------------------------------
+   Night loader — 怪談生成（タグ→怪談）の「夜に入っていく」待機演出。
+   dawn の4コマ夜明けは使わず、暗い夕闇のトーンで静かに息づくだけ。
+   明るくしない／夜明けにしない。すべて sumi 系トークン経由。
+   --------------------------------------------------------------- */
+
+/* 漢字「怪」が深く沈んでまた浮く、緩やかな呼吸。 */
+@keyframes yotogi-night-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* 細い線の上を、ほのかな明かりが左から右へ流れる。 */
+@keyframes yotogi-night-drift {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.yotogi-night-breathe {
+  animation: yotogi-night-breathe 3.2s ease-in-out infinite;
+}
+
+.yotogi-night-drift {
+  animation: yotogi-night-drift 2.4s ease-in-out infinite;
+}
+
+/* reduced-motion: 動きを止め、静かな夕闇のまま見せる。 */
+@media (prefers-reduced-motion: reduce) {
+  .yotogi-night-breathe,
+  .yotogi-night-drift {
+    animation: none;
+  }
+}
