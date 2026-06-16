@@ -1,0 +1,77 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------
+   YOTOGI / ネットロア — Global tokens
+   See /root/YOTOGI_IMPLEMENTATION_SPEC.md §2 for the source of truth.
+   --------------------------------------------------------------- */
+
+:root {
+  /* Accent reds */
+  --color-red-accent: #d91c0b;
+  --color-red-on-dark: #ff614a;
+
+  /* Sumi (墨) — dark neutrals */
+  --color-sumi-0: #0b0b0b;
+  --color-sumi-1: #1c1814;
+  --color-sumi-2: #5a5448;
+  --color-sumi-3: #a09890;
+
+  /* Off-white (昼) */
+  --color-offwhite-0: #f5f2ea;
+  --color-offwhite-1: #faf6ee;
+  --color-offwhite-2: #f0ebe5;
+
+  /* Earth accents */
+  --color-benigara: #7a3b2e;
+  --color-sand-rule: #c8bc9e;
+  --color-section-label: #b8ae9a;
+  --color-divider: #a89e8a;
+
+  /* Surface defaults — dark by default (夜) */
+  --background: var(--color-sumi-0);
+  --foreground: var(--color-offwhite-0);
+}
+
+@theme inline {
+  /* Colors — exposed as Tailwind utilities (bg-red-accent, text-sumi-3, etc.) */
+  --color-red-accent: var(--color-red-accent);
+  --color-red-on-dark: var(--color-red-on-dark);
+
+  --color-sumi-0: var(--color-sumi-0);
+  --color-sumi-1: var(--color-sumi-1);
+  --color-sumi-2: var(--color-sumi-2);
+  --color-sumi-3: var(--color-sumi-3);
+
+  --color-offwhite-0: var(--color-offwhite-0);
+  --color-offwhite-1: var(--color-offwhite-1);
+  --color-offwhite-2: var(--color-offwhite-2);
+
+  --color-benigara: var(--color-benigara);
+  --color-sand-rule: var(--color-sand-rule);
+  --color-section-label: var(--color-section-label);
+  --color-divider: var(--color-divider);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Fonts */
+  --font-sans: "Noto Sans JP", system-ui, -apple-system, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho",
+    "Noto Serif JP", serif;
+
+  /* Radii — chip / card / none */
+  --radius-chip: 20px;
+  --radius-card: 4px;
+  --radius-none: 0px;
+}
+
+html,
+body {
+  background: var(--color-sumi-0);
+  color: var(--color-offwhite-0);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
