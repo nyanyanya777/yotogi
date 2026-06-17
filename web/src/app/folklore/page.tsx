@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import StatusBar from "@/components/StatusBar";
 import ChevronLeftIcon from "@/components/ChevronLeftIcon";
 import PCFrame from "@/components/PCFrame";
+import PrimaryCTA from "@/components/PrimaryCTA";
 import {
   clearFolklore,
   clearStory,
@@ -87,7 +88,7 @@ export default function FolkloreAnalysisPage() {
           <Link
             href="/story"
             aria-label="戻る"
-            className="absolute left-4 flex h-6 w-6 items-center justify-center text-sumi-1 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
+            className="absolute left-1.5 flex h-11 w-11 items-center justify-center rounded-full text-sumi-1 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
           >
             <ChevronLeftIcon />
           </Link>
@@ -213,17 +214,17 @@ export default function FolkloreAnalysisPage() {
 
           {/* 再生成する — タグ選択からやり直す。現在の怪談/解説をクリアして
               /motif へ。新しいモチーフ3つで一から作り直す導線。 */}
-          <button
-            type="button"
+          {/* 統一 CTA（primary）。mt-2 でセクションからの間隔だけ付与 */}
+          <PrimaryCTA
+            label="再生成する"
+            variant="primary"
+            className="mt-2"
             onClick={() => {
               clearStory();
               clearFolklore();
               router.push("/motif");
             }}
-            className="mt-2 flex h-12 w-full items-center justify-center rounded-full bg-red-accent px-4 text-[16px] font-bold text-offwhite-1 transition-colors duration-150 hover:bg-red-accent/90 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
-          >
-            再生成する
-          </button>
+          />
         </main>
       </div>
     </PCFrame>

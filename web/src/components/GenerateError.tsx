@@ -26,7 +26,7 @@ import PCFrame from "@/components/PCFrame";
  *   lead   : Shippori Mincho Bold 24px leading 1.5 / offwhite
  *   body   : Noto Sans Regular 14px leading 1.7 / sumi-3（2行）
  *   gap    : content 内 20px / footer 8px / footer pb 40px px 16
- *   CTA    : h48 rounded-24 bg red-accent offwhite Bold 16
+ *   CTA    : h48 rounded-full bg red-accent offwhite Bold 16（統一 CTA 寸法）
  *   2nd    : h48 透明 text red-on-dark Bold 16
  */
 
@@ -206,7 +206,7 @@ export default function GenerateError({
           <button
             type="button"
             onClick={onRetry}
-            className={`flex h-12 w-full items-center justify-center rounded-[24px] px-4 text-[16px] font-bold transition-colors duration-150 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${tokens.ctaBg} ${tokens.ctaText} ${tokens.ctaFocus}`}
+            className={`flex h-12 w-full items-center justify-center rounded-full px-4 text-[16px] font-bold leading-[1.4] transition-colors duration-150 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${tokens.ctaBg} ${tokens.ctaText} ${tokens.ctaFocus}`}
           >
             {copy.retryLabel}
           </button>
@@ -214,7 +214,7 @@ export default function GenerateError({
             <button
               type="button"
               onClick={onBackToMotif}
-              className={`flex h-12 w-full items-center justify-center px-4 text-[16px] font-bold transition-opacity duration-150 hover:opacity-80 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${tokens.secondary} ${tokens.secondaryFocus}`}
+              className={`flex h-12 w-full items-center justify-center rounded-full px-4 text-[16px] font-bold leading-[1.4] transition-opacity duration-150 hover:opacity-80 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${tokens.secondary} ${tokens.secondaryFocus}`}
             >
               モチーフを選び直す
             </button>

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import StatusBar from "@/components/StatusBar";
 import PCFrame from "@/components/PCFrame";
 import HistoryAccordion from "@/components/HistoryAccordion";
+import PrimaryCTA from "@/components/PrimaryCTA";
 
 /**
  * Splash — Figma mobile 132:54 / PC 56:48 を 1:1 再現。
@@ -47,16 +47,12 @@ export default function SplashPage() {
             </div>
           </div>
 
-          {/* cta-container (132:109): w402 中央 */}
-          <div className="flex w-full flex-col items-center">
-            {/* cta-button (132:110): red/accent #D91C0B, h48, w343(max360,min132),
-                rounded24, Noto Sans JP Bold 16, offwhite/1-surface */}
-            <Link
-              href="/motif"
-              className="flex h-[48px] w-[343px] min-w-[132px] max-w-[360px] items-center justify-center rounded-[24px] bg-red-accent px-[16px] text-[16px] font-bold leading-[1.4] text-offwhite-1 transition-colors duration-150 hover:bg-red-accent/90 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
-            >
-              作成する
-            </Link>
+          {/* cta-container (132:109): w402 中央。CTA は w-full のため左右 px-4 で
+              他画面(motif/folklore 等)と同じマージン感に揃える */}
+          <div className="flex w-full flex-col items-center px-4">
+            {/* cta-button — 統一 CTA（primary）: h48 / rounded-full / w-full /
+                Noto Sans Bold 16 / red-accent on offwhite。横幅は cta-container 依存 */}
+            <PrimaryCTA href="/motif" label="作成する" variant="primary" />
 
           </div>
         </main>

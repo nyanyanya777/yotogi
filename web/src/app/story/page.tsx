@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import StatusBar from "@/components/StatusBar";
 import IconButton from "@/components/IconButton";
+import PrimaryCTA from "@/components/PrimaryCTA";
 import ShareIcon from "@/components/ShareIcon";
 import RefreshIcon from "@/components/RefreshIcon";
 import ChevronLeftIcon from "@/components/ChevronLeftIcon";
@@ -179,14 +179,9 @@ function StoryReading() {
           </IconButton>
         </div>
 
-        {/* PrimaryCTA — Figma 15:1090 / instance 23:23: bg offwhite-2 #F0EBE5,
-            text sumi-1, w 354, h 40, rounded full, Noto Sans Bold 16 */}
-        <Link
-          href="/generating?next=folklore"
-          className="flex h-10 w-full items-center justify-center rounded-full bg-offwhite-2 px-4 text-[16px] font-bold text-sumi-1 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-offwhite-2"
-        >
-          解説を作成
-        </Link>
+        {/* 統一 CTA（secondary）: bg offwhite-2 / text sumi-1。寸法は全 CTA 共通
+            (h48 / rounded-full / w-full / Noto Sans Bold 16) */}
+        <PrimaryCTA href="/generating?next=folklore" label="解説を作成" variant="secondary" />
       </footer>
 
       {shareMsg && (

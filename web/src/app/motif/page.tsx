@@ -148,7 +148,7 @@ export default function MotifSelectionPage() {
             type="button"
             onClick={() => router.push("/")}
             aria-label="戻る"
-            className="flex h-6 w-6 items-center justify-center text-offwhite-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
+            className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full text-offwhite-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
           >
             <svg
               width="24"
@@ -239,7 +239,6 @@ export default function MotifSelectionPage() {
           <PrimaryCTA
             label="怪談を作る"
             disabled={!isReady}
-            fullWidth
             onClick={() => {
               if (!isReady) return;
               saveTags(selected);
