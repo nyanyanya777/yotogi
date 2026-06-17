@@ -81,7 +81,7 @@ function StoryReading() {
   const paragraphs = story.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 
   return (
-    <PCFrame mode="night" bgImage="/images/ukiyoe-tomomori.jpg">
+    <PCFrame mode="night" bgImage="/images/pc-story-bg.jpg" frameShadow="night">
       {/* min-h-screen + sticky footer。content は自然スクロール、
           landscape でも横画面で読める。pb-[160px] で最終段落が隠れない */}
       <div className="bg-sumi-0 text-offwhite-2 mx-auto min-h-screen w-full max-w-[402px] flex flex-col">
@@ -170,7 +170,7 @@ export default function StoryReadingPage() {
   return (
     <Suspense
       fallback={
-        <PCFrame mode="night" bgImage="/images/ukiyoe-tomomori.jpg">
+        <PCFrame mode="night" bgImage="/images/pc-story-bg.jpg" frameShadow="night">
           <div className="bg-sumi-0 mx-auto min-h-screen w-full max-w-[402px]" />
         </PCFrame>
       }

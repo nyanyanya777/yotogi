@@ -81,7 +81,7 @@ export default function MotifSelectionPage() {
   }, [selected, count]);
 
   return (
-    <PCFrame mode="night" bgImage="/images/ukiyoe-takiyasha.jpg">
+    <PCFrame mode="night" bgImage="/images/pc-splash-bg.jpg" frameShadow="night">
       {/* min-h-screen で portrait は普通に縦長、landscape では自然スクロール。
           BottomBar の position:sticky bottom-0 はページ自体のスクロールに対し効く */}
       <div className="relative mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-sumi-0">

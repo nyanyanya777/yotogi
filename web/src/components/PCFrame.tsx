@@ -1,72 +1,64 @@
 /**
- * PCFrame — スマホ1デザイン(402px)を中央に、PC余白も含め1枚の背景で満たすラッパー。
+ * PCFrame — Figma PCフレーム(56:48 / 56:73 / 56:110)を 1:1 で再現するラッパー。
  *
- * Figma PCフレーム(56:48/56:73/56:110)準拠の考え方:
- *   背景画像(bgImage)は全幅フルブリードの「1枚」。中央402pxは veil を掛けず明るい
- *   ままにして「スマホ画面」に見せ、その左右だけを暗く落とす。これにより
- *   ・浮世絵を二重に重ねない(画像は1枚)
- *   ・黒い余白に箱が浮く感じにならない(余白も同じ画像の暗部)
- *
- *   - home(splash): スマホ画面の壁紙＝この背景そのもの。スマホ側を透過にして
- *     中央に明るい浮世絵が出る(壁紙の可読化オーバーレイはページ側)。
- *   - story/motif/folklore: スマホは単色。中央の単色スマホが左右の暗い画像から浮く。
- *
- * 中央のveil非適用は440px以上のみ(未満はスマホが全幅)。
+ * 構造(3層, いずれも440px以上で発動。未満はスマホ画面が全幅):
+ *   1. bgImage を全幅フルブリード(object-cover)
+ *   2. 全面 veil … 夜=sumi/0-black #0B0B0B @0.6 / 昼=offwhite/0-base #F5F2EA @0.45
+ *      (Figma night-veil-* / day-veil。実測値)
+ *   3. 中央 402px のスマホ画面(=children)。明るさ差で浮く。drop shadow は
+ *      ページ毎(splash=なし / story=0 8 48 .4 / folklore=0 4 32 .12)なので
+ *      frameShadow で受ける。
  */
 type PCFrameProps = {
   mode: "night" | "day";
-  /** 全幅フルブリードで敷く背景画像。省略時は無地。 */
   bgImage?: string;
+  /** Figma 各フレームのスマホ drop shadow。splash は false。 */
+  frameShadow?: "night" | "day" | false;
   children: React.ReactNode;
 };
 
-export default function PCFrame({ mode, bgImage, children }: PCFrameProps) {
-  // 左右(余白)に掛ける帳。中央を明るく残すため脇だけ落とす。
+export default function PCFrame({
+  mode,
+  bgImage,
+  frameShadow = false,
+  children,
+}: PCFrameProps) {
   const veilClass =
     mode === "night"
-      ? "bg-[rgba(11,11,11,0.66)]"
-      : "bg-[rgba(245,242,234,0.5)]";
+      ? "bg-[rgba(11,11,11,0.6)]"
+      : "bg-[rgba(245,242,234,0.45)]";
 
-  const surroundClass = mode === "night" ? "bg-sumi-0" : "bg-offwhite-0";
-
-  // 中央402px=端末画面の縁。薄いringで境界を締める(影は出さない=浮き箱感を避ける)。
-  const edgeClass =
-    mode === "night"
-      ? "min-[440px]:ring-1 min-[440px]:ring-white/10"
-      : "min-[440px]:ring-1 min-[440px]:ring-black/10";
+  const shadowClass =
+    frameShadow === "night"
+      ? "min-[440px]:shadow-[0px_8px_48px_0px_rgba(0,0,0,0.4)]"
+      : frameShadow === "day"
+        ? "min-[440px]:shadow-[0px_4px_32px_0px_rgba(20,15,10,0.12)]"
+        : "";
 
   return (
     <div data-pcframe-mode={mode} className="relative min-h-screen w-full">
-      {bgImage ? (
-        // 背景画像は全幅1枚・モバイルでも表示(homeの壁紙になる)
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={bgImage}
-          alt=""
-          aria-hidden="true"
-          loading="eager"
-          className="pointer-events-none fixed inset-0 z-0 h-full w-full object-cover"
-        />
-      ) : (
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none fixed inset-0 z-0 ${surroundClass}`}
-        />
+      {bgImage && (
+        <>
+          {/* 1. 全幅フルブリード背景 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={bgImage}
+            alt=""
+            aria-hidden="true"
+            loading="eager"
+            className="pointer-events-none fixed inset-0 z-0 hidden h-full w-full object-cover min-[440px]:block"
+          />
+          {/* 2. 全面 veil */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none fixed inset-0 z-[1] hidden min-[440px]:block ${veilClass}`}
+          />
+        </>
       )}
 
-      {/* 左右の帳 — 中央402pxを避けて両脇だけ暗く(440px以上のみ) */}
+      {/* 3. 中央402pxのスマホ画面 */}
       <div
-        aria-hidden="true"
-        className={`pointer-events-none fixed inset-y-0 left-0 right-[calc(50%+201px)] z-[1] hidden min-[440px]:block ${veilClass}`}
-      />
-      <div
-        aria-hidden="true"
-        className={`pointer-events-none fixed inset-y-0 left-[calc(50%+201px)] right-0 z-[1] hidden min-[440px]:block ${veilClass}`}
-      />
-
-      {/* 中央の端末画面(402px固定) */}
-      <div
-        className={`relative z-10 mx-auto min-h-screen w-full min-[440px]:max-w-[402px] ${edgeClass}`}
+        className={`relative z-10 mx-auto min-h-screen w-full min-[440px]:max-w-[402px] ${shadowClass}`}
       >
         {children}
       </div>

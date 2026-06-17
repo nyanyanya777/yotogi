@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;600;700;800&family=Young+Serif&display=swap");
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------
@@ -60,6 +60,7 @@
     Arial, sans-serif;
   --font-mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho",
     "Noto Serif JP", serif;
+  --font-young: "Young Serif", "Shippori Mincho", serif;
 
   /* Radii — chip / card / none */
   --radius-chip: 20px;
