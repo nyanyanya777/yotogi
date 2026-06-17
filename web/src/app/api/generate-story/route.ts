@@ -15,6 +15,14 @@ import { buildRefsBlock } from "@/lib/corpus";
 import { fallbackStory, type StoryOutput } from "@/lib/fallback";
 import { callStoryModel, isDisabled } from "@/lib/llm";
 import { STORY_SYSTEM, buildStoryUserMessage } from "@/lib/prompts";
+import {
+  MAX_REQUEST_BYTES,
+  MAX_TAG_LEN,
+  checkRateLimit,
+  isRequestTooLarge,
+  isStrWithin,
+  tooManyRequests,
+} from "@/lib/apiGuards";
 
 // fs.readFileSync を使うので Node runtime を強制。
 export const runtime = "nodejs";
@@ -27,19 +35,28 @@ function isStringTriple(x: unknown): x is [string, string, string] {
   return (
     Array.isArray(x) &&
     x.length === 3 &&
-    x.every((v) => typeof v === "string" && v.trim().length > 0)
+    x.every((v) => isStrWithin(v, MAX_TAG_LEN))
   );
 }
 
 export async function POST(req: NextRequest) {
+  // 濫用対策（コスト/DoS）: レート制限 → リクエスト肥大の早期拒否。
+  const rl = checkRateLimit(req);
+  if (!rl.ok) return tooManyRequests(rl.retryAfter);
+  if (isRequestTooLarge(req)) {
+    return Response.json({ error: "payload too large" }, { status: 413 });
+  }
+
   let parsed: Body;
   try {
-    parsed = (await req.json()) as Body;
+    // content-length に依存せず本文サイズを上限で弾く（チャンク送信対策）。
+    const raw = await req.text();
+    if (raw.length > MAX_REQUEST_BYTES) {
+      return Response.json({ error: "payload too large" }, { status: 413 });
+    }
+    parsed = JSON.parse(raw) as Body;
   } catch {
-    return Response.json(
-      { error: "invalid json body" },
-      { status: 400 },
-    );
+    return Response.json({ error: "invalid json body" }, { status: 400 });
   }
 
   if (!isStringTriple(parsed.tags)) {
