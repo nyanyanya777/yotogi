@@ -68,6 +68,12 @@
   --radius-none: 0px;
 }
 
+html {
+  /* スクロールバーの溝を常に確保し、ページ毎のスクロール有無で画面幅が変わって
+     固定背景が横ずれするのを防ぐ（home=非スクロール / motif等=スクロールの差）。 */
+  scrollbar-gutter: stable;
+}
+
 html,
 body {
   background: var(--color-sumi-0);

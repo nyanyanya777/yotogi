@@ -20,10 +20,10 @@ export default function SplashPage() {
         {/* 履歴アコーディオン — 右上。開くと過去の怪談一覧。 */}
         <HistoryAccordion />
 
-        {/* スマホ画面の壁紙(浮世絵 中央パネル) — Figma 132:55 */}
+        {/* スマホ画面のメインビジュアル=骸骨(がしゃどくろ)。PC周囲はろくろ首。 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/images/splash-phone.jpg"
+          src="/images/skeleton-phone.jpg"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 z-0 h-full w-full object-cover"

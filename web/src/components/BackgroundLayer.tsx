@@ -28,7 +28,8 @@ const DAY_VEIL = "bg-[rgba(245,242,234,0.45)]";
 
 function configFor(pathname: string): BgConfig | null {
   if (pathname === "/" || pathname === "/motif") {
-    return { src: "/images/pc-splash-bg.jpg", veil: NIGHT_VEIL };
+    // PC周囲背景はろくろ首(Takiyasha)の場面。骸骨はスマホ主役に回したため。
+    return { src: "/images/pc-rokurokubi-bg.jpg", veil: NIGHT_VEIL };
   }
   if (pathname === "/story") {
     return { src: "/images/pc-story-bg.jpg", veil: NIGHT_VEIL };
@@ -53,7 +54,7 @@ export default function BackgroundLayer() {
         alt=""
         aria-hidden="true"
         loading="eager"
-        className="pointer-events-none fixed inset-0 z-0 hidden h-full w-full object-cover min-[440px]:block"
+        className="pointer-events-none fixed inset-0 z-0 hidden h-full w-full scale-110 object-cover blur-[10px] min-[440px]:block"
       />
       <div
         aria-hidden="true"

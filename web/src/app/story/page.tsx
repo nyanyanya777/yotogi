@@ -20,6 +20,7 @@ import {
   saveFolklore,
   type StoredStory,
 } from "@/lib/yotogiStorage";
+import { decodeStory, encodeStory } from "@/lib/shareLink";
 
 /**
  * StoryReading `/story`
@@ -45,11 +46,28 @@ function StoryReading() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const historyId = searchParams.get("h");
+  const sharedToken = searchParams.get("s");
   const [story, setStory] = useState<StoredStory>(FALLBACK_STORY);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
 
   useEffect(() => {
     // SSR で fallback を出して hydration mismatch を避けるため、
     // localStorage 読み込みは意図的に effect 内で行う
+
+    // 共有リンク: ?s=<token> は本文を内包した怪談。デコードして current に復元し表示。
+    if (sharedToken) {
+      const decoded = decodeStory(sharedToken);
+      if (decoded) {
+        const restored = { title: decoded.title, body: decoded.body };
+        saveStory(restored);
+        if (decoded.tags.length === 3) saveTags(decoded.tags);
+        clearFolklore();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setStory(restored);
+        return;
+      }
+      // 壊れたトークンは無視して通常フローへ
+    }
 
     // 履歴からの読み返し: ?h=<id> が指定されたら、その怪談を
     // current スロット（story/tags/folklore）に復元してから表示する。
@@ -62,7 +80,6 @@ function StoryReading() {
         saveTags(entry.tags);
         if (entry.folklore) saveFolklore(entry.folklore);
         else clearFolklore();
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStory(restored);
         return;
       }
@@ -75,7 +92,30 @@ function StoryReading() {
       return;
     }
     if (s) setStory(s);
-  }, [historyId, router]);
+  }, [historyId, sharedToken, router]);
+
+  // 共有: 怪談を URL に内包したリンクを Web Share、非対応ならクリップボードへ。
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/story?s=${encodeStory(story, loadTags() ?? [])}`;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: story.title, text: story.title, url });
+        return;
+      } catch (e) {
+        // ユーザーがシートをキャンセルした場合(AbortError)はコピーしない
+        if (e instanceof Error && e.name === "AbortError") return;
+        // それ以外の失敗はクリップボードにフォールバック
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMsg("リンクをコピーしました");
+    } catch {
+      setShareMsg("コピーできませんでした");
+    }
+    window.setTimeout(() => setShareMsg(null), 2000);
+  };
 
   // 段落分割（モデル出力は \n\n 区切りを想定）。
   const paragraphs = story.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
@@ -123,13 +163,7 @@ function StoryReading() {
         <div className="flex items-center justify-end gap-4 mb-4 text-sumi-3">
           <IconButton
             label="共有"
-            onClick={() => {
-              if (typeof navigator !== "undefined" && navigator.share) {
-                navigator
-                  .share({ title: story.title, text: story.body })
-                  .catch(() => {});
-              }
-            }}
+            onClick={handleShare}
           >
             <ShareIcon />
           </IconButton>
@@ -154,6 +188,18 @@ function StoryReading() {
           解説を作成
         </Link>
       </footer>
+
+      {shareMsg && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 bottom-28 z-50 flex justify-center px-6"
+        >
+          <span className="rounded-full bg-offwhite-1 px-4 py-2 font-sans text-[13px] leading-none text-sumi-1 shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
+            {shareMsg}
+          </span>
+        </div>
+      )}
       </div>
     </PCFrame>
   );

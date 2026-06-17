@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import StatusBar from "@/components/StatusBar";
 import GenerateError, { type GenerateErrorKind } from "@/components/GenerateError";
 import {
   loadTags,
@@ -337,11 +336,6 @@ function DawnSequence() {
       }}
       aria-label={phase === "folklore" ? "解説を生成中" : "怪談を生成中"}
     >
-      {/* StatusBar は absolute で外し、漢字の中央計算から除外する */}
-      <div className="absolute top-0 left-0 right-0">
-        <StatusBarTimeOnly textColor={frame.text} transitionMs={transitionMs} />
-      </div>
-
       {/* スキップ (Esc) — a11y 脱出。 */}
       <button
         type="button"
@@ -397,33 +391,6 @@ function DawnSequence() {
   );
 }
 
-/**
- * dawn 演出中のステータスバー — 時刻 (9:41) のみ表示。
- */
-function StatusBarTimeOnly({
-  textColor,
-  transitionMs,
-}: {
-  textColor: string;
-  transitionMs: number;
-}) {
-  return (
-    <div
-      className="flex h-11 w-full items-center justify-between px-6"
-      style={{
-        color: textColor,
-        transitionProperty: "color",
-        transitionDuration: `${transitionMs}ms`,
-        transitionTimingFunction: EASING,
-      }}
-    >
-      <span className="font-sans text-[15px] font-semibold tracking-tight">
-        9:41
-      </span>
-    </div>
-  );
-}
-
 export default function GeneratingPage() {
   return (
     <Suspense
@@ -431,9 +398,7 @@ export default function GeneratingPage() {
         <div
           className="flex min-h-screen w-full items-center justify-center"
           style={{ backgroundColor: DAWN_FRAMES[0].bg, color: DAWN_FRAMES[0].text }}
-        >
-          <StatusBar className="lg:hidden" />
-        </div>
+        />
       }
     >
       <DawnSequence />
