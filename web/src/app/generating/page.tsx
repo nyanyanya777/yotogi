@@ -55,11 +55,11 @@ const DAWN_FRAMES: DawnFrame[] = [
   { id: "dawn-4", bg: "#CBC5BC", text: "#1A1614", kanji: "解", progress: 95 },
 ];
 
-// 怪談(story)への日暮れ: 昼→夕→宵→怪（昼→夜）。dawn の明暗を反転させたもの。
+// 怪談(story)への日暮れ: 明→薄→暗→怪（明→暗）。解説の dawn「暗→薄→明」の逆順。
 const DUSK_FRAMES: DawnFrame[] = [
-  { id: "dusk-1", bg: "#CBC5BC", text: "#1A1614", kanji: "昼", progress: 15 },
-  { id: "dusk-2", bg: "#ACA49A", text: "#1A1614", kanji: "夕", progress: 40 },
-  { id: "dusk-3", bg: "#3A3530", text: "#C2BDB6", kanji: "宵", progress: 70 },
+  { id: "dusk-1", bg: "#CBC5BC", text: "#1A1614", kanji: "明", progress: 15 },
+  { id: "dusk-2", bg: "#ACA49A", text: "#1A1614", kanji: "薄", progress: 40 },
+  { id: "dusk-3", bg: "#3A3530", text: "#C2BDB6", kanji: "暗", progress: 70 },
   { id: "dusk-4", bg: "#181614", text: "#C8C4BE", kanji: "怪", progress: 95 },
 ];
 
@@ -326,7 +326,7 @@ function DawnSequence() {
 
   return (
     <main
-      className="relative flex min-h-screen w-full flex-col items-center justify-center"
+      className="relative flex min-h-dvh w-full flex-col items-center justify-center"
       style={{
         backgroundColor: frame.bg,
         color: frame.text,
@@ -396,7 +396,7 @@ export default function GeneratingPage() {
     <Suspense
       fallback={
         <div
-          className="flex min-h-screen w-full items-center justify-center"
+          className="flex min-h-dvh w-full items-center justify-center"
           style={{ backgroundColor: DAWN_FRAMES[0].bg, color: DAWN_FRAMES[0].text }}
         />
       }

@@ -175,7 +175,7 @@ export default function GenerateError({
   return (
     <PCFrame mode={tokens.mode} bgImage={tokens.bgImage}>
       <div
-        className={`${tokens.bg} ${tokens.text} mx-auto flex min-h-screen w-full max-w-[402px] flex-col`}
+        className={`${tokens.bg} ${tokens.text} mx-auto flex min-h-dvh w-full max-w-[402px] flex-col`}
       >
         <StatusBar className={`${tokens.statusBarText} lg:hidden`} />
 

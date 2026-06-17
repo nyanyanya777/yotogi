@@ -28,10 +28,10 @@ export default function PCFrame({ mode, frameShadow = false, children }: PCFrame
         : "";
 
   return (
-    <div data-pcframe-mode={mode} className="relative min-h-screen w-full">
+    <div data-pcframe-mode={mode} className="relative min-h-dvh w-full">
       <div
         className={
-          "relative z-10 mx-auto min-h-screen w-full min-[440px]:max-w-[402px] " +
+          "relative z-10 mx-auto min-h-dvh w-full min-[440px]:max-w-[402px] " +
           shadowClass
         }
       >

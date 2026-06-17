@@ -77,8 +77,8 @@ export default function FolkloreAnalysisPage() {
   return (
     <PCFrame mode="day" bgImage="/images/pc-folklore-bg.jpg" frameShadow="day">
       {/* tablet (768/1024) でも max-w-[402px] でモバイル列を維持。
-          min-h-screen で内容が長い場合スクロール、短い場合は viewport いっぱい */}
-      <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-screen w-full max-w-[402px] flex-col">
+          min-h-dvh で内容が長い場合スクロール、短い場合は viewport いっぱい */}
+      <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-dvh w-full max-w-[402px] flex-col">
         {/* StatusBar — Figma 46:583: 9:41 を sumi-1 で表示。PC では非表示 */}
         <StatusBar className="text-sumi-1" />
 
@@ -135,7 +135,7 @@ export default function FolkloreAnalysisPage() {
             {/* collapsed-body — body excerpt with fade-overlay。
                 opacity でコントラスト不足になるので text-offwhite-2 直指定 (AA 5.8:1) */}
             <div className="relative">
-              <p className="font-sans text-[14px] font-normal leading-[1.7] text-offwhite-2">
+              <p className="font-sans text-[16px] font-normal leading-[1.7] text-offwhite-2">
                 {excerpt}
               </p>
               {/* fade-overlay — bottom 60px gradient to #1A1A1A */}
@@ -203,7 +203,7 @@ export default function FolkloreAnalysisPage() {
                   <p className="font-mincho text-[16px] leading-[1.9] text-benigara">
                     {sec.label}
                   </p>
-                  <p className="font-sans text-[14px] font-normal leading-[1.7] text-sumi-1">
+                  <p className="font-sans text-[16px] font-normal leading-[1.7] text-sumi-1">
                     {sec.body}
                   </p>
                 </div>

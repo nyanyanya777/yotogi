@@ -122,9 +122,9 @@ function StoryReading() {
 
   return (
     <PCFrame mode="night" bgImage="/images/pc-story-bg.jpg" frameShadow="night">
-      {/* min-h-screen + sticky footer。content は自然スクロール、
+      {/* min-h-dvh + sticky footer。content は自然スクロール、
           landscape でも横画面で読める。pb-[160px] で最終段落が隠れない */}
-      <div className="bg-sumi-0 text-offwhite-2 mx-auto min-h-screen w-full max-w-[402px] flex flex-col">
+      <div className="bg-sumi-0 text-offwhite-2 mx-auto min-h-dvh w-full max-w-[402px] flex flex-col">
       <StatusBar className="text-offwhite-2" />
 
       {/* NavBar — chevron は履歴を 1 段戻す。直接エントリ時は /motif に fallback */}
@@ -211,7 +211,7 @@ export default function StoryReadingPage() {
     <Suspense
       fallback={
         <PCFrame mode="night" bgImage="/images/pc-story-bg.jpg" frameShadow="night">
-          <div className="bg-sumi-0 mx-auto min-h-screen w-full max-w-[402px]" />
+          <div className="bg-sumi-0 mx-auto min-h-dvh w-full max-w-[402px]" />
         </PCFrame>
       }
     >
