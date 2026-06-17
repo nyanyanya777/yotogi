@@ -126,7 +126,7 @@ function StoryReading() {
   const paragraphs = story.body.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 
   return (
-    <PCFrame mode="night" bgImage="/images/pc-story-bg.jpg" frameShadow="night">
+    <PCFrame mode="night" frameShadow="night">
       {/* min-h-dvh + sticky footer。content は自然スクロール、
           landscape でも横画面で読める。pb-[160px] で最終段落が隠れない */}
       <div className="bg-sumi-0 text-offwhite-2 mx-auto min-h-dvh w-full max-w-[402px] flex flex-col">
@@ -163,7 +163,10 @@ function StoryReading() {
       </main>
 
       {/* Footer — sticky bottom-0 で page スクロールに対し viewport 下端に固定 */}
-      <footer className="sticky bottom-0 bg-sumi-0 px-6 pb-6 pt-4 backdrop-blur-sm">
+      <footer
+        className="sticky bottom-0 bg-sumi-0 px-6 pt-4 backdrop-blur-sm"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
         {/* SubActions — 共有 + 再生成。再生成は localStorage クリアして dawn に戻す */}
         <div className="flex items-center justify-end gap-4 mb-4 text-sumi-3">
           <IconButton
@@ -210,7 +213,7 @@ export default function StoryReadingPage() {
   return (
     <Suspense
       fallback={
-        <PCFrame mode="night" bgImage="/images/pc-story-bg.jpg" frameShadow="night">
+        <PCFrame mode="night" frameShadow="night">
           <div className="bg-sumi-0 mx-auto min-h-dvh w-full max-w-[402px]" />
         </PCFrame>
       }

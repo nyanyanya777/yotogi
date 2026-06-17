@@ -76,11 +76,20 @@ html {
 
 html,
 body {
-  background: var(--color-sumi-0);
   color: var(--color-offwhite-0);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS ゴムバンド(オーバースクロール)で地の外の黒が露出するのを封じる。
+     チェーン(親へのスクロール伝播)とグロー/バウンス両方を止める。 */
+  overscroll-behavior: none;
+}
+
+/* ハイドレーション前の初期描画フォールバックの地は html(最背面のキャンバス)に置く。
+   body は透明にし、地は RootBackground / 各ページの fixed 層(-z-10/遷移色)が担う。
+   body を塗ると -z-10 の地レイヤーがその下に隠れて遷移色が出ないため、body は塗らない。 */
+html {
+  background: var(--color-sumi-0);
 }
 
 /* ---------------------------------------------------------------

@@ -136,7 +136,7 @@ export default function MotifSelectionPage() {
   }, [selected, count]);
 
   return (
-    <PCFrame mode="night" bgImage="/images/pc-splash-bg.jpg" frameShadow="night">
+    <PCFrame mode="night" frameShadow="night">
       {/* min-h-dvh で portrait は普通に縦長、landscape では自然スクロール。
           BottomBar の position:sticky bottom-0 はページ自体のスクロールに対し効く */}
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[402px] flex-col bg-sumi-0">
@@ -214,7 +214,10 @@ export default function MotifSelectionPage() {
         </div>
 
         {/* BottomBar — Figma 15:1071: bg sumi-0, gap-12, p-16 */}
-        <div className="sticky bottom-0 left-0 right-0 z-10 mx-auto flex w-full max-w-[402px] flex-col gap-3 bg-sumi-0 p-4">
+        <div
+          className="sticky bottom-0 left-0 right-0 z-10 mx-auto flex w-full max-w-[402px] flex-col gap-3 bg-sumi-0 px-4 pt-4"
+          style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+        >
           {/* SelectionSummary — Noto Sans Regular 14 leading 1.7, gap-4, divider sumi-divider */}
           <div className="flex flex-wrap items-center gap-1 font-sans text-[14px] leading-[1.7]">
             {summaryParts.length === 0 ? (

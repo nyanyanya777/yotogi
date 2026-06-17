@@ -328,14 +328,26 @@ function DawnSequence() {
     <main
       className="relative flex min-h-dvh w-full flex-col items-center justify-center"
       style={{
-        backgroundColor: frame.bg,
         color: frame.text,
-        transitionProperty: "background-color, color",
+        transitionProperty: "color",
         transitionDuration: `${transitionMs}ms`,
         transitionTimingFunction: EASING,
       }}
       aria-label={phase === "folklore" ? "解説を生成中" : "怪談を生成中"}
     >
+      {/* 地レイヤー — 実 viewport を fixed で全面に覆い、遷移色に同期する。
+          明フレーム(明/解=#ACA49A/#CBC5BC)でも overscroll/safe-area まで
+          フレーム色が覆うため、root の墨や黒が一切露出しない。 */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          backgroundColor: frame.bg,
+          transitionProperty: "background-color",
+          transitionDuration: `${transitionMs}ms`,
+          transitionTimingFunction: EASING,
+        }}
+      />
       {/* スキップ (Esc) — a11y 脱出。 */}
       <button
         type="button"
@@ -396,9 +408,18 @@ export default function GeneratingPage() {
     <Suspense
       fallback={
         <div
-          className="flex min-h-dvh w-full items-center justify-center"
-          style={{ backgroundColor: DAWN_FRAMES[0].bg, color: DAWN_FRAMES[0].text }}
-        />
+          className="relative flex min-h-dvh w-full items-center justify-center"
+          style={{ color: DAWN_FRAMES[0].text }}
+        >
+          {/* 地レイヤー — 原則どおり fixed で実 viewport を全面に覆う。
+              /generating は RootBackground が null のため、fallback 自身が地を敷く。
+              暗色なので実害は小さいが穴を残さない。 */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 -z-10"
+            style={{ backgroundColor: DAWN_FRAMES[0].bg }}
+          />
+        </div>
       }
     >
       <DawnSequence />

@@ -4,56 +4,95 @@ import HistoryAccordion from "@/components/HistoryAccordion";
 import PrimaryCTA from "@/components/PrimaryCTA";
 
 /**
- * Splash — Figma mobile 132:54 / PC 56:48 を 1:1 再現。
- * スマホ画面: ukiyo-e 壁紙(splash-phone) + legibility 0.45 + YOTOGI(Young Serif 80px,
- *   大文字) + 作成する CTA。PC: PCFrame が pc-splash-bg を全幅 + 墨 veil 0.6。splash は
- *   スマホに drop shadow なし(Figma 56:48)。
+ * Splash（トップ）— がしゃどくろ(骸骨)を主役に、夜の入口を見せる起動画面。
+ *
+ * 面の分離（画像にベタ乗りしない）:
+ *   1) 地        … 暗い墨のグラデ(下地)。画像のロード/失敗時もここが出るので黒ベタにならない。
+ *   2) 画像      … 骸骨を absolute inset-0 で敷き、頭部が見えるよう object-position を上寄せ。
+ *   3) 可読スクリム … 上端→透明→下端の縦グラデ「帯」のみ(上=ロゴ帯 / 下=CTA帯)。
+ *                   中央スポット/放射ビネット無し・上下均一の帯のみ。中央の骸骨は素の明るさを残す。
+ *   4) UI 階層   … ロゴは上帯の上、CTA は下帯の上に置き、画像とは別レイヤーで読ませる。
+ *
+ * PC 周囲背景(ろくろ首)と veil は RootLayout 常駐の BackgroundLayer が描く。
+ * 高さは min-h-dvh（100dvh 固定をやめ、オーバースクロール/ツールバー収縮でも黒を出さない。
+ * 地は RootBackground(fixed)が viewport 全面を覆う）。
  */
 export default function SplashPage() {
   return (
-    <PCFrame mode="night" bgImage="/images/pc-splash-bg.jpg">
-      {/* horror-app-rokurokubi-visual (132:91) — w402 / overflow-clip / bg-black */}
-      <div
-        className="relative mx-auto w-full max-w-[402px] overflow-hidden bg-black"
-        style={{ height: "100dvh", minHeight: "100dvh" }}
-      >
-        {/* 履歴アコーディオン — 右上。開くと過去の怪談一覧。 */}
-        <HistoryAccordion />
+    <PCFrame mode="night">
+      {/* スマホ画面 = 骸骨ビジュアル。w402 / 縦は min-h-dvh で伸縮 */}
+      <div className="relative mx-auto flex w-full min-h-dvh max-w-[402px] flex-col overflow-hidden">
+        {/* 1) 地 — 暗い墨のグラデ。画像が出る前/失敗時もこの下地が見え、純黒ベタにならない。 */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-0"
+          style={{
+            background:
+              "linear-gradient(180deg, var(--color-sumi-1) 0%, var(--color-sumi-0) 100%)",
+          }}
+        />
 
-        {/* スマホ画面のメインビジュアル=骸骨(がしゃどくろ)。PC周囲はろくろ首。 */}
+        {/* 2) 画像 — 骸骨(がしゃどくろ)。頭部を見せるため object-position を上寄せ、
+            左右は主役が切れないよう中央。inset-0 で親の高さ確定に依存しない。
+            LCP となるヒーロー画像なので fetchPriority="high" + eager で先読みヒントを与える。 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/skeleton-phone.jpg"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 z-0 h-full w-full object-cover"
+          fetchPriority="high"
+          loading="eager"
+          className="absolute inset-0 z-[1] h-full w-full object-cover [object-position:50%_28%]"
         />
-        {/* legibility-overlay — Figma 132:94: rgba(0,0,0,0.45) 均一 */}
-        <div className="absolute inset-0 z-[1] bg-[rgba(0,0,0,0.45)]" aria-hidden="true" />
 
-        {/* safe-area-wrapper (132:95): justify-between, pb-40 */}
-        <main className="relative z-10 flex h-full flex-col justify-between pb-[40px]">
+        {/* 3) 可読スクリム — 上下の帯のみ(中央は素の骸骨)。
+            上帯=ロゴ可読 / 下帯=CTA可読。放射/スポット無し・縦一様の帯。 */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 z-[2]"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(11,11,11,0.72) 0%, rgba(11,11,11,0.30) 24%, rgba(11,11,11,0) 44%, rgba(11,11,11,0) 60%, rgba(11,11,11,0.55) 82%, rgba(11,11,11,0.86) 100%)",
+          }}
+        />
+
+        {/* 履歴アコーディオン — 右上。開くと過去の怪談一覧。 */}
+        <HistoryAccordion />
+
+        {/* UI 階層 — safe-area を含めて配置。上=ロゴ帯 / 下=CTA帯 */}
+        <main
+          className="relative z-10 flex min-h-dvh flex-col justify-between"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "calc(40px + env(safe-area-inset-bottom))",
+          }}
+        >
           <div className="flex flex-col items-center">
             <StatusBar className="self-stretch" />
-            {/* hero-section (132:106): pt-120 */}
+            {/* hero — ロゴは上帯の上。Young Serif 80px / uppercase / 影で更に分離 */}
             <div className="flex flex-col items-center pt-[120px]">
-              {/* logo (132:108): Young Serif 80px / uppercase / leading-0.9 / 影 */}
               <h1
                 className="w-full text-center font-young text-[80px] uppercase leading-[0.9] text-white"
-                style={{ fontFamily: 'var(--font-young)', textShadow: "0px 2px 10px rgba(0,0,0,0.8)" }}
+                style={{
+                  fontFamily: "var(--font-young)",
+                  textShadow: "0px 2px 14px rgba(0,0,0,0.85)",
+                }}
               >
                 Yotogi
               </h1>
+              {/* タグライン — ロゴの下、上帯の上に階層を持って置く。 */}
+              <p
+                className="mt-4 text-center font-mincho text-[15px] leading-[1.8] text-offwhite-2"
+                style={{ textShadow: "0px 1px 8px rgba(0,0,0,0.7)" }}
+              >
+                夜に語り、昼に解く。
+              </p>
             </div>
           </div>
 
-          {/* cta-container (132:109): w402 中央。CTA は w-full のため左右 px-4 で
-              他画面(motif/folklore 等)と同じマージン感に揃える */}
+          {/* CTA — 下帯の上。左右 px-4 で他画面と同じマージン感。統一 PrimaryCTA。 */}
           <div className="flex w-full flex-col items-center px-4">
-            {/* cta-button — 統一 CTA（primary）: h48 / rounded-full / w-full /
-                Noto Sans Bold 16 / red-accent on offwhite。横幅は cta-container 依存 */}
             <PrimaryCTA href="/motif" label="作成する" variant="primary" />
-
           </div>
         </main>
       </div>

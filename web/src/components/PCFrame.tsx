@@ -9,12 +9,11 @@ import type React from "react";
  * frameShadow はページ毎(Figma 56:48/56:73/56:110):
  *   splash=なし / story=`0 8 48 rgba(0,0,0,.4)` / folklore=`0 4 32 rgba(20,15,10,.12)`。
  *
- * mode / bgImage は呼び出し側の意図を表す目印として受け取るが、描画は
+ * mode は呼び出し側の意図を表す目印として受け取るが、背景の描画は
  * BackgroundLayer(pathname 駆動)が一元管理する。
  */
 type PCFrameProps = {
   mode: "night" | "day";
-  bgImage?: string;
   frameShadow?: "night" | "day" | false;
   children: React.ReactNode;
 };

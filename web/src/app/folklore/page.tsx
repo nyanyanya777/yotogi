@@ -76,7 +76,7 @@ export default function FolkloreAnalysisPage() {
   ];
 
   return (
-    <PCFrame mode="day" bgImage="/images/pc-folklore-bg.jpg" frameShadow="day">
+    <PCFrame mode="day" frameShadow="day">
       {/* tablet (768/1024) でも max-w-[402px] でモバイル列を維持。
           min-h-dvh で内容が長い場合スクロール、短い場合は viewport いっぱい */}
       <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-dvh w-full max-w-[402px] flex-col">
