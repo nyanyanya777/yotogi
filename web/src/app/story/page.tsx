@@ -91,13 +91,7 @@ function StoryReading() {
       <nav className="flex h-12 items-center px-4">
         <button
           type="button"
-          onClick={() => {
-            if (typeof window !== "undefined" && window.history.length > 2) {
-              router.back();
-            } else {
-              router.replace("/motif");
-            }
-          }}
+          onClick={() => router.push(historyId ? "/" : "/motif")}
           aria-label="戻る"
           className="flex h-11 w-11 items-center justify-center rounded-full text-offwhite-2 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
         >

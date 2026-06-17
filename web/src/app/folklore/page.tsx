@@ -7,6 +7,7 @@ import StatusBar from "@/components/StatusBar";
 import ChevronLeftIcon from "@/components/ChevronLeftIcon";
 import PCFrame from "@/components/PCFrame";
 import {
+  clearFolklore,
   loadFolklore,
   loadStory,
   loadTags,
@@ -208,6 +209,19 @@ export default function FolkloreAnalysisPage() {
               ))}
             </div>
           </section>
+
+          {/* 再生成する — 同じ怪談に対して解説を作り直す。clearFolklore して
+              /generating?next=folklore へ。story の「再生成」と対の導線。 */}
+          <button
+            type="button"
+            onClick={() => {
+              clearFolklore();
+              router.push("/generating?next=folklore");
+            }}
+            className="mt-2 flex h-12 w-full items-center justify-center rounded-full bg-red-accent px-4 text-[16px] font-bold text-offwhite-1 transition-colors duration-150 hover:bg-red-accent/90 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
+          >
+            再生成する
+          </button>
         </main>
       </div>
     </PCFrame>

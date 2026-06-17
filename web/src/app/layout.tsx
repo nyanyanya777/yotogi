@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import BackgroundLayer from "@/components/BackgroundLayer";
 
 export const metadata: Metadata = {
   title: "YOTOGI / ネットロア",
@@ -21,6 +22,8 @@ export default function RootLayout({
   return (
     <html lang="ja" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-sumi-0 text-offwhite-0 font-sans">
+        {/* PC のフルブリード背景は遷移しても据え置く層に集約（チラつき防止）。 */}
+        <BackgroundLayer />
         {children}
       </body>
     </html>

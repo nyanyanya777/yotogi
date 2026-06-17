@@ -13,6 +13,7 @@ import {
   attachFolkloreToHistory,
   loadHistory,
 } from "@/lib/yotogiStorage";
+import { maybeCorruptStory } from "@/lib/corruption";
 
 /**
  * Generating (`/generating`) — 二相の待機演出 + 失敗フィードバック
@@ -40,29 +41,36 @@ import {
  */
 
 type DawnFrame = {
-  id: "dawn-1" | "dawn-2" | "dawn-3" | "dawn-4";
+  id: string;
   bg: string;
   text: string;
   kanji: string;
   progress: number; // 0-100
 };
 
-const FRAMES: DawnFrame[] = [
+// 解説(folklore)への夜明け: 暗→薄→明→解（夜→昼）。
+const DAWN_FRAMES: DawnFrame[] = [
   { id: "dawn-1", bg: "#181614", text: "#C8C4BE", kanji: "暗", progress: 15 },
   { id: "dawn-2", bg: "#3A3530", text: "#C2BDB6", kanji: "薄", progress: 40 },
   { id: "dawn-3", bg: "#ACA49A", text: "#1A1614", kanji: "明", progress: 70 },
   { id: "dawn-4", bg: "#CBC5BC", text: "#1A1614", kanji: "解", progress: 95 },
 ];
 
+// 怪談(story)への日暮れ: 昼→夕→宵→怪（昼→夜）。dawn の明暗を反転させたもの。
+const DUSK_FRAMES: DawnFrame[] = [
+  { id: "dusk-1", bg: "#CBC5BC", text: "#1A1614", kanji: "昼", progress: 15 },
+  { id: "dusk-2", bg: "#ACA49A", text: "#1A1614", kanji: "夕", progress: 40 },
+  { id: "dusk-3", bg: "#3A3530", text: "#C2BDB6", kanji: "宵", progress: 70 },
+  { id: "dusk-4", bg: "#181614", text: "#C8C4BE", kanji: "怪", progress: 95 },
+];
+
 const FRAME_DURATION_MS = 2000;
 const TRANSITION_MS_DEFAULT = 1600;
 const EASING = "cubic-bezier(0.4, 0, 0.2, 1)";
-const API_MAX_WAIT_MS = 15000;
-// 夜ローダー（story）の最小表示時間。短く控えめに見せ切ってから遷移/失敗提示する。
-const NIGHT_LOADER_MIN_MS = 1600;
-// 夜ローダーの夕闇トーン（dawn-1「暗」相当）。直書きせず token から引く。
-const NIGHT_BG = "var(--color-sumi-0)";
-const NIGHT_TEXT = "var(--color-sumi-3)";
+// 生成 API の最大待機時間。解説(folklore)は draft+verifier の Sonnet 2 段で
+// 実測 22〜35s かかる（story 単段でも 13〜14s）。15s では解説がほぼ毎回 abort され
+// 「解説が生成されない」状態になっていたため、実測に余裕を持たせて 60s とする。
+const API_MAX_WAIT_MS = 60000;
 
 // API 呼び出しの結末。dawn 完了後にこれを見てエラー or 遷移を決める。
 type Outcome =
@@ -99,6 +107,8 @@ function DawnSequence() {
   const phase: "story" | "folklore" =
     nextParam === "folklore" ? "folklore" : "story";
   const next = phase === "folklore" ? "/folklore" : "/story";
+  // folklore=夜明け(夜→昼) / story=日暮れ(昼→夜)。演出を解説と反転させる。
+  const FRAMES = phase === "folklore" ? DAWN_FRAMES : DUSK_FRAMES;
 
   const [index, setIndex] = useState(0);
   const [apiDone, setApiDone] = useState(false);
@@ -194,8 +204,10 @@ function DawnSequence() {
           }
           const s = await res.json();
           if (!cancelled) {
-            saveStory(s);
-            addHistory({ tags, title: s.title, body: s.body });
+            // ネットロアの呪い: 約 1/10 で怪談が文字化け/無意味な羅列になる。
+            const story = maybeCorruptStory(s);
+            saveStory(story);
+            addHistory({ tags, title: story.title, body: story.body });
           }
           finish({ kind: "ok" });
         }
@@ -231,24 +243,18 @@ function DawnSequence() {
   //   - story:    夜ローダーを最小時間だけ見せ、introComplete を立てる（フレーム遷移なし）。
   //   - folklore: dawn-1 → dawn-4 を自動進行し、最終フレーム（解）到達で introComplete。
   useEffect(() => {
-    if (phase === "story") {
-      const t = window.setTimeout(() => {
-        if (mountedRef.current) setIntroComplete(true);
-      }, NIGHT_LOADER_MIN_MS);
-      return () => window.clearTimeout(t);
-    }
     if (index < FRAMES.length - 1) {
       const t = window.setTimeout(() => {
         if (mountedRef.current) setIndex((i) => i + 1);
       }, FRAME_DURATION_MS);
       return () => window.clearTimeout(t);
     }
-    // 最終フレーム（解）を一定時間見せたら dawn 完了とみなす
+    // 最終フレームを一定時間見せたら演出完了とみなす
     const t = window.setTimeout(() => {
       if (mountedRef.current) setIntroComplete(true);
     }, FRAME_DURATION_MS);
     return () => window.clearTimeout(t);
-  }, [index, phase]);
+  }, [index, FRAMES.length]);
 
   // 演出完了 & API 完了の両方が揃ったら、結果に応じて遷移 or エラー提示。
   useEffect(() => {
@@ -316,64 +322,7 @@ function DawnSequence() {
     );
   }
 
-  // ── 夜の簡易ローダー（story） ──
-  // dawn の4コマ夜明けは使わない。暗い夕闇のトーンのまま、漢字「怪」が
-  // 静かに息づく控えめな待機。明るくしない・夜明けにしない。
-  if (phase === "story") {
-    return (
-      <main
-        className="relative flex min-h-screen w-full flex-col items-center justify-center"
-        style={{ backgroundColor: NIGHT_BG, color: NIGHT_TEXT }}
-        aria-label="怪談を生成中"
-      >
-        {/* StatusBar は absolute で外し、漢字の中央計算から除外する */}
-        <div className="absolute top-0 left-0 right-0">
-          <StatusBarTimeOnly textColor={NIGHT_TEXT} transitionMs={0} />
-        </div>
-
-        {/* スキップ (Esc) — a11y 脱出。 */}
-        <button
-          type="button"
-          onClick={handleSkip}
-          aria-label="生成を中止して戻る"
-          className="absolute right-4 top-4 rounded-full px-3 py-1 text-[12px] opacity-60 transition-opacity hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-          style={{ color: NIGHT_TEXT, borderColor: NIGHT_TEXT }}
-        >
-          スキップ
-        </button>
-
-        {/* 漢字一字「怪」— 中央で静かに息づく（reduced-motion 時は静止）。 */}
-        <span
-          aria-hidden="true"
-          className="yotogi-night-breathe font-mincho font-medium text-[48px] leading-none"
-          style={{ color: NIGHT_TEXT }}
-        >
-          怪
-        </span>
-
-        {/* sr-only ステータス。 */}
-        <span className="sr-only" role="status" aria-live="polite">
-          怪談を生成しています
-        </span>
-
-        {/* 細い線の上を、ほのかな明かりが流れるだけの最小限の動き。
-            進行度は不確定なので indeterminate な progressbar。 */}
-        <div
-          className="relative mt-10 h-px w-[200px] overflow-hidden"
-          style={{ backgroundColor: "rgba(160,152,144,0.18)" }}
-          role="progressbar"
-          aria-label="生成中"
-        >
-          <div
-            className="yotogi-night-drift absolute inset-y-0 left-0 w-1/3"
-            style={{ backgroundColor: NIGHT_TEXT }}
-          />
-        </div>
-      </main>
-    );
-  }
-
-  // ── dawn 演出（folklore = 解説への夜明け） ──
+  // ── フレーム演出 ── folklore=夜明け(夜→昼) / story=日暮れ(昼→夜)。
   const frame = FRAMES[index];
 
   return (
@@ -386,7 +335,7 @@ function DawnSequence() {
         transitionDuration: `${transitionMs}ms`,
         transitionTimingFunction: EASING,
       }}
-      aria-label="解説を生成中"
+      aria-label={phase === "folklore" ? "解説を生成中" : "怪談を生成中"}
     >
       {/* StatusBar は absolute で外し、漢字の中央計算から除外する */}
       <div className="absolute top-0 left-0 right-0">
@@ -481,7 +430,7 @@ export default function GeneratingPage() {
       fallback={
         <div
           className="flex min-h-screen w-full items-center justify-center"
-          style={{ backgroundColor: FRAMES[0].bg, color: FRAMES[0].text }}
+          style={{ backgroundColor: DAWN_FRAMES[0].bg, color: DAWN_FRAMES[0].text }}
         >
           <StatusBar className="lg:hidden" />
         </div>

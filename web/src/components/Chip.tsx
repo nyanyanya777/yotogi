@@ -29,13 +29,16 @@ export default function Chip({ label, selected, onClick, disabled = false }: Chi
     variant =
       "bg-sumi-0 border-sumi-3 text-sumi-3 text-[14px] font-normal leading-[1.7] opacity-45 cursor-not-allowed";
   } else if (selected) {
-    // Selected — 赤枠 + 赤 Bold 16
+    // Selected — 赤枠 + 赤文字 + 淡い赤地で区別。
+    // 文字サイズ/ウェイトは Default と同一(14px / normal)に固定する。
+    // 以前は 16px Bold に変えていたが、選択のたびにチップ幅が伸縮して
+    // グリッド全体がリフローし「タグの大きさが変わって違和感」状態だった。
     variant =
-      "bg-sumi-0 border-red-on-dark text-red-on-dark text-[16px] font-bold leading-[1.4]";
+      "bg-red-on-dark/15 border-red-on-dark text-red-on-dark text-[14px] font-normal leading-[1.7]";
   } else {
-    // Default → Hover（hover で赤枠 + offwhite Medium）
+    // Default → Hover（hover は枠色のみ変える。font-weight は変えない＝幅が動かない）
     variant =
-      "bg-sumi-0 border-offwhite-1 text-offwhite-1 text-[14px] font-normal leading-[1.7] hover:border-red-on-dark hover:font-medium";
+      "bg-sumi-0 border-offwhite-1 text-offwhite-1 text-[14px] font-normal leading-[1.7] hover:border-red-on-dark";
   }
 
   return (

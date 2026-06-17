@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import StatusBar from "@/components/StatusBar";
 import Chip from "@/components/Chip";
 import PrimaryCTA from "@/components/PrimaryCTA";
 import PCFrame from "@/components/PCFrame";
 import { saveTags, clearStory, clearFolklore } from "@/lib/yotogiStorage";
+import { maybeCorruptTagMap } from "@/lib/corruption";
 
 /**
  * MotifSelection (Screen#MotifSelection, Figma 15:1011)
@@ -50,11 +51,21 @@ const CATEGORIES = [
   },
 ] as const;
 
+// 16 語彙のフラット一覧（タグ文字化けの抽選母集団）。
+const ALL_LABELS: string[] = CATEGORIES.flatMap((c) => [...c.chips]);
+
 const REQUIRED = 3;
 
 export default function MotifSelectionPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
+  // ネットロアの呪い: 約 1/10 で 16 個中 1 つのタグが文字化けする。
+  // SSR と差異が出るため mount 後にのみ適用（hydration mismatch 回避）。
+  const [corruptMap, setCorruptMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCorruptMap(maybeCorruptTagMap(ALL_LABELS));
+  }, []);
 
   const toggle = (label: string) => {
     setSelected((prev) => {
@@ -91,13 +102,7 @@ export default function MotifSelectionPage() {
         <div className="flex items-center justify-between px-5 py-4">
           <button
             type="button"
-            onClick={() => {
-              if (typeof window !== "undefined" && window.history.length > 2) {
-                router.back();
-              } else {
-                router.replace("/");
-              }
-            }}
+            onClick={() => router.push("/")}
             aria-label="戻る"
             className="flex h-6 w-6 items-center justify-center text-offwhite-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
           >
@@ -146,14 +151,16 @@ export default function MotifSelectionPage() {
               {/* chip-grid — gap-12 wrap */}
               <div className="flex flex-wrap gap-3">
                 {cat.chips.map((chip) => {
-                  const isSelected = selected.includes(chip);
+                  // 呪いが乗ったラベルは表示も選択値も文字化け版に差し替える。
+                  const label = corruptMap[chip] ?? chip;
+                  const isSelected = selected.includes(label);
                   return (
                     <Chip
                       key={chip}
-                      label={chip}
+                      label={label}
                       selected={isSelected}
                       disabled={isReady && !isSelected}
-                      onClick={() => toggle(chip)}
+                      onClick={() => toggle(label)}
                     />
                   );
                 })}

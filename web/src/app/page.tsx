@@ -1,7 +1,7 @@
 import Link from "next/link";
 import StatusBar from "@/components/StatusBar";
 import PCFrame from "@/components/PCFrame";
-import HistoryStrip from "@/components/HistoryStrip";
+import HistoryAccordion from "@/components/HistoryAccordion";
 
 /**
  * Splash — Figma mobile 132:54 / PC 56:48 を 1:1 再現。
@@ -17,6 +17,9 @@ export default function SplashPage() {
         className="relative mx-auto w-full max-w-[402px] overflow-hidden bg-black"
         style={{ height: "100dvh", minHeight: "100dvh" }}
       >
+        {/* 履歴アコーディオン — 右上。開くと過去の怪談一覧。 */}
+        <HistoryAccordion />
+
         {/* スマホ画面の壁紙(浮世絵 中央パネル) — Figma 132:55 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -55,7 +58,6 @@ export default function SplashPage() {
               作成する
             </Link>
 
-            <HistoryStrip />
           </div>
         </main>
       </div>
