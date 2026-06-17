@@ -84,7 +84,7 @@ function StoryReading() {
     <PCFrame mode="night" bgImage="/images/ukiyoe-tomomori.jpg">
       {/* min-h-screen + sticky footer。content は自然スクロール、
           landscape でも横画面で読める。pb-[160px] で最終段落が隠れない */}
-      <div className="bg-sumi-0 lg:bg-sumi-0/75 text-offwhite-2 mx-auto min-h-screen w-full max-w-[402px] flex flex-col">
+      <div className="bg-sumi-0 text-offwhite-2 mx-auto min-h-screen w-full max-w-[402px] flex flex-col">
       <StatusBar className="text-offwhite-2 lg:hidden" />
 
       {/* NavBar — chevron は履歴を 1 段戻す。直接エントリ時は /motif に fallback */}
@@ -124,7 +124,7 @@ function StoryReading() {
       </main>
 
       {/* Footer — sticky bottom-0 で page スクロールに対し viewport 下端に固定 */}
-      <footer className="sticky bottom-0 bg-sumi-0 lg:bg-sumi-0/85 px-6 pb-6 pt-4 backdrop-blur-sm">
+      <footer className="sticky bottom-0 bg-sumi-0 px-6 pb-6 pt-4 backdrop-blur-sm">
         {/* SubActions — 共有 + 再生成。再生成は localStorage クリアして dawn に戻す */}
         <div className="flex items-center justify-end gap-4 mb-4 text-sumi-3">
           <IconButton

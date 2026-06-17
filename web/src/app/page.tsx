@@ -17,7 +17,7 @@ export default function SplashPage() {
       {/* h-dvh で iPhone SE (667) など短 viewport でも CTA がフォールド下に
           埋没しないよう viewport 高さに固定する */}
       <div
-        className="relative mx-auto w-full max-w-[402px] overflow-hidden bg-sumi-0 lg:bg-transparent"
+        className="relative mx-auto w-full max-w-[402px] overflow-hidden bg-sumi-0"
         style={{ height: "100dvh", minHeight: "100dvh" }}
       >
         {/* DarkVeil — モバイルのみ */}
@@ -29,9 +29,9 @@ export default function SplashPage() {
         {/* Figma safe-area-wrapper: justify-between, 下に余白。
             PC では logo を中央寄せ、CTA は下端固定 */}
         <main className="relative z-10 flex h-full flex-col justify-between pb-10">
-          <div className="flex flex-col items-center lg:flex-1 lg:justify-center">
+          <div className="flex flex-col items-center">
             <StatusBar className="lg:hidden self-stretch" />
-            <div className="flex flex-col items-center pt-[120px] lg:pt-0">
+            <div className="flex flex-col items-center pt-[120px]">
               <h1
                 className="font-mincho text-[48px] font-medium leading-none text-offwhite-1"
                 style={{ textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}

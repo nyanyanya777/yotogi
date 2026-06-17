@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import StatusBar from "@/components/StatusBar";
 import ChevronLeftIcon from "@/components/ChevronLeftIcon";
 import PCFrame from "@/components/PCFrame";
-import FolkloreGlosses from "@/components/FolkloreGlosses";
 import {
   loadFolklore,
   loadStory,
@@ -75,10 +74,9 @@ export default function FolkloreAnalysisPage() {
 
   return (
     <PCFrame mode="day" bgImage="/images/scholar-desk.jpg">
-      <FolkloreGlosses />
       {/* tablet (768/1024) でも max-w-[402px] でモバイル列を維持。
           min-h-screen で内容が長い場合スクロール、短い場合は viewport いっぱい */}
-      <div className="bg-offwhite-0 lg:bg-offwhite-0/85 text-sumi-1 mx-auto flex min-h-screen w-full max-w-[402px] flex-col">
+      <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-screen w-full max-w-[402px] flex-col">
         {/* StatusBar — Figma 46:583: 9:41 を sumi-1 で表示。PC では非表示 */}
         <StatusBar className="text-sumi-1 lg:hidden" />
 
