@@ -13,25 +13,17 @@ import HistoryStrip from "@/components/HistoryStrip";
  */
 export default function SplashPage() {
   return (
-    <PCFrame mode="night">
+    <PCFrame mode="night" bgImage="/images/ukiyoe-takiyasha.jpg">
       {/* h-dvh で iPhone SE (667) など短 viewport でも CTA がフォールド下に
-          埋没しないよう viewport 高さに固定する */}
+          埋没しないよう viewport 高さに固定する。スマホ画面は透過にし、PCFrame の
+          全幅浮世絵(1枚)の明るい中央=このスマホ画面の壁紙として見せる。 */}
       <div
-        className="relative mx-auto w-full max-w-[402px] overflow-hidden bg-sumi-0"
+        className="relative mx-auto w-full max-w-[402px] overflow-hidden"
         style={{ height: "100dvh", minHeight: "100dvh" }}
       >
-        {/* ukiyo-e-background — Figma 132:55: スマホ画面の壁紙(滝夜叉)。
-            モバイル/PC ともこのスマホ自身の背景。周囲には重ねない。 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/ukiyoe-takiyasha.jpg"
-          alt=""
-          aria-hidden="true"
-          className="absolute inset-0 z-0 h-full w-full object-cover"
-        />
         {/* legibility-overlay — Figma 132:57: 上下を落として YOTOGI / CTA を可読に */}
         <div
-          className="absolute inset-0 z-[1] bg-gradient-to-b from-sumi-0/75 via-sumi-0/25 to-sumi-0/90"
+          className="absolute inset-0 z-[1] bg-gradient-to-b from-sumi-0/70 via-sumi-0/15 to-sumi-0/85"
           aria-hidden="true"
         />
 
