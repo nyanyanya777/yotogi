@@ -1,8 +1,12 @@
 /**
- * shareLink.ts — 怪談を URL に内包する共有リンクのエンコード/デコード。
+ * shareLink.ts — 旧 `/story?s=<token>` 共有リンクのデコード（後方互換）。
  *
- * 怪談は localStorage にしか無いため、相手に「開いて読める」形で渡すには本文ごと
- * URL に載せる必要がある。`/story?s=<base64url(JSON)>` 形式。サーバDBは持たない。
+ * かつては怪談本文を URL に内包して共有していた（`/story?s=<base64url(JSON)>`）が、
+ * URL が長すぎる（約330字）ため新規シェアでは廃止。現在の共有は短いアプリ URL +
+ * 「タイトル＋さわり」テキスト（src/app/story/page.tsx handleShare）。
+ *
+ * decodeStory は既存の長い `?s=` リンクで来た相手のために残置する。
+ * encodeStory は新規生成では使わない（後方互換のため export は残す）。
  *
  * JSON は {t:title, b:body, g:tags} のコンパクト形。UTF-8 を base64url で安全に運ぶ。
  * デコード側は形と長さを検証し、壊れた/巨大な入力は null を返す（自タブ保護）。

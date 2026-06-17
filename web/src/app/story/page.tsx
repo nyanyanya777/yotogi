@@ -20,7 +20,7 @@ import {
   saveFolklore,
   type StoredStory,
 } from "@/lib/yotogiStorage";
-import { decodeStory, encodeStory } from "@/lib/shareLink";
+import { decodeStory } from "@/lib/shareLink";
 
 /**
  * StoryReading `/story`
@@ -94,13 +94,18 @@ function StoryReading() {
     if (s) setStory(s);
   }, [historyId, sharedToken, router]);
 
-  // 共有: 怪談を URL に内包したリンクを Web Share、非対応ならクリップボードへ。
+  // 共有: 短いアプリURL + 「タイトル + さわり」のテキストを Web Share、非対応ならクリップボードへ。
+  // 怪談全文は URL に載せない（長すぎるため）。OG カードはアプリ既定の og:image が出る。
   const handleShare = async () => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}/story?s=${encodeStory(story, loadTags() ?? [])}`;
+    const url = window.location.origin;
+    // 本文の冒頭を 1 行に均し、約 70 字で抜粋（超過時は末尾 … で省略）。
+    const flat = story.body.replace(/\s+/g, " ").trim();
+    const excerpt = flat.length > 70 ? `${flat.slice(0, 70)}…` : flat;
+    const text = `『${story.title}』\n${excerpt}`;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
-        await navigator.share({ title: story.title, text: story.title, url });
+        await navigator.share({ title: story.title, text, url });
         return;
       } catch (e) {
         // ユーザーがシートをキャンセルした場合(AbortError)はコピーしない
@@ -109,7 +114,7 @@ function StoryReading() {
       }
     }
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(`${text}\n${url}`);
       setShareMsg("リンクをコピーしました");
     } catch {
       setShareMsg("コピーできませんでした");
