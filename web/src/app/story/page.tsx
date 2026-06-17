@@ -85,7 +85,7 @@ function StoryReading() {
       {/* min-h-screen + sticky footer。content は自然スクロール、
           landscape でも横画面で読める。pb-[160px] で最終段落が隠れない */}
       <div className="bg-sumi-0 text-offwhite-2 mx-auto min-h-screen w-full max-w-[402px] flex flex-col">
-      <StatusBar className="text-offwhite-2 lg:hidden" />
+      <StatusBar className="text-offwhite-2" />
 
       {/* NavBar — chevron は履歴を 1 段戻す。直接エントリ時は /motif に fallback */}
       <nav className="flex h-12 items-center px-4">

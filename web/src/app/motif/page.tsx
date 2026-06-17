@@ -85,7 +85,7 @@ export default function MotifSelectionPage() {
       {/* min-h-screen で portrait は普通に縦長、landscape では自然スクロール。
           BottomBar の position:sticky bottom-0 はページ自体のスクロールに対し効く */}
       <div className="relative mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-sumi-0">
-        <StatusBar className="lg:hidden" />
+        <StatusBar className="" />
 
         {/* NavBar — Figma 15:1019: px-20 py-16, justify-between */}
         <div className="flex items-center justify-between px-5 py-4">

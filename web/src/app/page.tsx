@@ -13,16 +13,25 @@ import HistoryStrip from "@/components/HistoryStrip";
  */
 export default function SplashPage() {
   return (
-    <PCFrame mode="night" bgImage="/images/ukiyoe-takiyasha.jpg">
+    <PCFrame mode="night">
       {/* h-dvh で iPhone SE (667) など短 viewport でも CTA がフォールド下に
           埋没しないよう viewport 高さに固定する */}
       <div
         className="relative mx-auto w-full max-w-[402px] overflow-hidden bg-sumi-0"
         style={{ height: "100dvh", minHeight: "100dvh" }}
       >
-        {/* DarkVeil — モバイルのみ */}
+        {/* ukiyo-e-background — Figma 132:55: スマホ画面の壁紙(滝夜叉)。
+            モバイル/PC ともこのスマホ自身の背景。周囲には重ねない。 */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/ukiyoe-takiyasha.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 z-0 h-full w-full object-cover"
+        />
+        {/* legibility-overlay — Figma 132:57: 上下を落として YOTOGI / CTA を可読に */}
         <div
-          className="absolute inset-0 bg-sumi-0 lg:hidden"
+          className="absolute inset-0 z-[1] bg-gradient-to-b from-sumi-0/75 via-sumi-0/25 to-sumi-0/90"
           aria-hidden="true"
         />
 
@@ -30,7 +39,7 @@ export default function SplashPage() {
             PC では logo を中央寄せ、CTA は下端固定 */}
         <main className="relative z-10 flex h-full flex-col justify-between pb-10">
           <div className="flex flex-col items-center">
-            <StatusBar className="lg:hidden self-stretch" />
+            <StatusBar className="self-stretch" />
             <div className="flex flex-col items-center pt-[120px]">
               <h1
                 className="font-mincho text-[48px] font-medium leading-none text-offwhite-1"

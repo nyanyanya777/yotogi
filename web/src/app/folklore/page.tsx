@@ -73,12 +73,12 @@ export default function FolkloreAnalysisPage() {
   ];
 
   return (
-    <PCFrame mode="day" bgImage="/images/scholar-desk.jpg">
+    <PCFrame mode="day" bgImage="/images/sunrise.jpg">
       {/* tablet (768/1024) でも max-w-[402px] でモバイル列を維持。
           min-h-screen で内容が長い場合スクロール、短い場合は viewport いっぱい */}
       <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-screen w-full max-w-[402px] flex-col">
         {/* StatusBar — Figma 46:583: 9:41 を sumi-1 で表示。PC では非表示 */}
-        <StatusBar className="text-sumi-1 lg:hidden" />
+        <StatusBar className="text-sumi-1" />
 
         {/* Header Type (46:589) — h-44, "解説" 中央、戻る chevron 左端 */}
         <nav className="relative flex h-11 items-center">
