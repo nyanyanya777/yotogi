@@ -174,16 +174,16 @@ export default function GenerateError({
 
   return (
     <PCFrame mode={tokens.mode}>
-      {/* 地レイヤー — 実 viewport を fixed で全面に覆う。/generating では
-          RootBackground が null のため、この層が無いと html の墨黒(sumi-0)が
-          昼(day=offwhite)のエラー/空状態で safe-area・overscroll 域に露出する。
-          色はモード別トークン駆動（night=sumi-0 / day=offwhite-0、直 hex なし）。 */}
+      {/* 地レイヤー — 額装コラム内を absolute で覆う。モバイル(<440px)はコラムが
+          全幅なので実 viewport を覆う＝safe-area/overscroll まで地色。PC では
+          コラム内だけに閉じ、昼(day=offwhite)でも viewport 全面がクリームに
+          ならず外側は暗い浮世絵 surround。色はモード別トークン駆動(直 hex なし)。 */}
       <div
         aria-hidden="true"
-        className={`pointer-events-none fixed inset-0 -z-10 ${tokens.ground}`}
+        className={`pointer-events-none absolute inset-0 -z-10 ${tokens.ground}`}
       />
       <div
-        className={`${tokens.bg} ${tokens.text} mx-auto flex min-h-dvh w-full max-w-[402px] flex-col`}
+        className={`${tokens.bg} ${tokens.text} relative mx-auto flex min-h-dvh w-full max-w-[402px] flex-col`}
       >
         <StatusBar className={`${tokens.statusBarText} lg:hidden`} />
 

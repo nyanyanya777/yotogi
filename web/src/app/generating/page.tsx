@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GenerateError, { type GenerateErrorKind } from "@/components/GenerateError";
+import PCFrame from "@/components/PCFrame";
 import {
   loadTags,
   loadStory,
@@ -324,23 +325,32 @@ function DawnSequence() {
   // ── フレーム演出 ── folklore=夜明け(夜→昼) / story=日暮れ(昼→夜)。
   const frame = FRAMES[index];
 
+  // 額装モデル: 演出は中央 402px の額装コラム内で行う。遷移色(frame.bg)は
+  // コラム内に閉じ(absolute inset-0)、コラムの外は BackgroundLayer の暗い
+  // 浮世絵 surround が見える。PC で全画面黒の void にしない。
+  // PCFrame mode は遷移色の明暗で切替(明/解は day 扱い)。
+  const pcframeMode: "night" | "day" =
+    frame.text === "#1A1614" ? "day" : "night";
+
   return (
-    <main
-      className="relative flex min-h-dvh w-full flex-col items-center justify-center"
-      style={{
-        color: frame.text,
-        transitionProperty: "color",
-        transitionDuration: `${transitionMs}ms`,
-        transitionTimingFunction: EASING,
-      }}
-      aria-label={phase === "folklore" ? "解説を生成中" : "怪談を生成中"}
-    >
-      {/* 地レイヤー — 実 viewport を fixed で全面に覆い、遷移色に同期する。
-          明フレーム(明/解=#ACA49A/#CBC5BC)でも overscroll/safe-area まで
-          フレーム色が覆うため、root の墨や黒が一切露出しない。 */}
+    <PCFrame mode={pcframeMode}>
+      <main
+        className="relative flex min-h-dvh w-full flex-col items-center justify-center"
+        style={{
+          color: frame.text,
+          transitionProperty: "color",
+          transitionDuration: `${transitionMs}ms`,
+          transitionTimingFunction: EASING,
+        }}
+        aria-label={phase === "folklore" ? "解説を生成中" : "怪談を生成中"}
+      >
+      {/* 地レイヤー — コラム内を absolute で覆い、遷移色に同期する。
+          モバイル(<440px)はコラムが全幅なので実 viewport を覆う＝従来どおり
+          overscroll/safe-area まで遷移色。PC ではコラム内だけに閉じ、
+          外側は暗い浮世絵 surround が見える。root の墨/黒は一切露出しない。 */}
       <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10"
+        className="pointer-events-none absolute inset-0 -z-10"
         style={{
           backgroundColor: frame.bg,
           transitionProperty: "background-color",
@@ -399,7 +409,8 @@ function DawnSequence() {
           }}
         />
       </div>
-    </main>
+      </main>
+    </PCFrame>
   );
 }
 
@@ -407,19 +418,19 @@ export default function GeneratingPage() {
   return (
     <Suspense
       fallback={
-        <div
-          className="relative flex min-h-dvh w-full items-center justify-center"
-          style={{ color: DAWN_FRAMES[0].text }}
-        >
-          {/* 地レイヤー — 原則どおり fixed で実 viewport を全面に覆う。
-              /generating は RootBackground が null のため、fallback 自身が地を敷く。
-              暗色なので実害は小さいが穴を残さない。 */}
+        // fallback も額装コラム内に地を敷く。コラム外は暗い浮世絵 surround。
+        // 初期は dusk-1(明) だと PC で白い列が一瞬出るため、暗い夜色で始める。
+        <PCFrame mode="night">
           <div
-            aria-hidden="true"
-            className="pointer-events-none fixed inset-0 -z-10"
-            style={{ backgroundColor: DAWN_FRAMES[0].bg }}
-          />
-        </div>
+            className="relative flex min-h-dvh w-full items-center justify-center"
+            style={{ color: DAWN_FRAMES[0].text }}
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 bg-sumi-0"
+            />
+          </div>
+        </PCFrame>
       }
     >
       <DawnSequence />
