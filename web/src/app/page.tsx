@@ -13,53 +13,63 @@ import PrimaryCTA from "@/components/PrimaryCTA";
  *                   中央スポット/放射ビネット無し・上下均一の帯のみ。中央の骸骨は素の明るさを残す。
  *   4) UI 階層   … ロゴは上帯の上、CTA は下帯の上に置き、画像とは別レイヤーで読ませる。
  *
- * PC 周囲背景(ろくろ首)と veil は RootLayout 常駐の BackgroundLayer が描く。
- * 高さは min-h-dvh（100dvh 固定をやめ、オーバースクロール/ツールバー収縮でも黒を出さない。
- * 地は RootBackground(fixed)が viewport 全面を覆う）。
+ * ★ 黒帯(#0b0b0b body)封じの肝:
+ *   1〜3 の「面(surface)」は、入れ子の min-h-dvh チェーン(PCFrame×2 → 列 → main)の
+ *   高さ計算に依存させず、surface 親を <440px では `fixed inset-0`(実 viewport に直ピン)、
+ *   ≥440px では `absolute inset-0`(額装 402 パネル内に閉じる)に切り替える。
+ *   これにより iOS Safari の dvh/safe-area/ツールバー収縮/ゴムバンドで列が実高さに
+ *   届かなくても、面は常に実 viewport を 100% 覆い、CTA より下に黒が出ない。
+ *   面は pointer-events-none で、上の UI 階層(CTA/履歴)の操作を妨げない。
  */
 export default function SplashPage() {
   return (
     <PCFrame mode="night">
       {/* スマホ画面 = 骸骨ビジュアル。w402 / 縦は min-h-dvh で伸縮 */}
       <div className="relative mx-auto flex w-full min-h-dvh max-w-[402px] flex-col overflow-hidden min-[440px]:min-h-full">
-        {/* 1) 地 — 暗い墨のグラデ。画像が出る前/失敗時もこの下地が見え、純黒ベタにならない。 */}
+        {/* 面(surface)親 — <440px は fixed inset-0(実 viewport 直ピン) /
+            ≥440px は absolute inset-0(額装パネル内に閉じる)。pointer-events-none で
+            上の UI を妨げない。overflow-hidden は object-cover のはみ出しを切る。 */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 z-0"
-          style={{
-            background:
-              "linear-gradient(180deg, var(--color-sumi-1) 0%, var(--color-sumi-0) 100%)",
-          }}
-        />
+          className="pointer-events-none fixed inset-0 z-0 overflow-hidden min-[440px]:absolute"
+        >
+          {/* 1) 地 — 暗い墨のグラデ。画像が出る前/失敗時もこの下地が見え、純黒ベタにならない。 */}
+          <div
+            className="absolute inset-0 z-0"
+            style={{
+              background:
+                "linear-gradient(180deg, var(--color-sumi-1) 0%, var(--color-sumi-0) 100%)",
+            }}
+          />
 
-        {/* 2) 画像 — 骸骨(がしゃどくろ)。頭部を見せるため object-position を上寄せ、
-            左右は主役が切れないよう中央。inset-0 で親の高さ確定に依存しない。
-            LCP となるヒーロー画像なので fetchPriority="high" + eager で先読みヒントを与える。 */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/skeleton-phone.jpg"
-          alt=""
-          aria-hidden="true"
-          fetchPriority="high"
-          loading="eager"
-          className="absolute inset-0 z-[1] h-full w-full object-cover [object-position:50%_28%]"
-        />
+          {/* 2) 画像 — 骸骨(がしゃどくろ)。頭部を見せるため object-position を上寄せ、
+              左右は主役が切れないよう中央。inset-0 で親(面)の高さに従う。
+              LCP となるヒーロー画像なので fetchPriority="high" + eager で先読みヒントを与える。 */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/skeleton-phone.jpg"
+            alt=""
+            fetchPriority="high"
+            loading="eager"
+            className="absolute inset-0 z-[1] h-full w-full object-cover [object-position:50%_28%]"
+          />
 
-        {/* 3) 可読スクリム — 上下の帯のみ(中央は素の骸骨)。
-            上帯=ロゴ可読 / 下帯=CTA可読。放射/スポット無し・縦一様の帯。 */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 z-[2]"
-          style={{
-            background:
-              "linear-gradient(180deg, rgba(11,11,11,0.72) 0%, rgba(11,11,11,0.30) 24%, rgba(11,11,11,0) 44%, rgba(11,11,11,0) 60%, rgba(11,11,11,0.55) 82%, rgba(11,11,11,0.86) 100%)",
-          }}
-        />
+          {/* 3) 可読スクリム — 上下の帯のみ(中央は素の骸骨)。
+              上帯=ロゴ可読 / 下帯=CTA可読。放射/スポット無し・縦一様の帯。 */}
+          <div
+            className="absolute inset-0 z-[2]"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(11,11,11,0.72) 0%, rgba(11,11,11,0.30) 24%, rgba(11,11,11,0) 44%, rgba(11,11,11,0) 60%, rgba(11,11,11,0.55) 82%, rgba(11,11,11,0.86) 100%)",
+            }}
+          />
+        </div>
 
         {/* 履歴アコーディオン — 右上。開くと過去の怪談一覧。 */}
         <HistoryAccordion />
 
-        {/* UI 階層 — safe-area を含めて配置。上=ロゴ帯 / 下=CTA帯 */}
+        {/* UI 階層 — safe-area を含めて配置。上=ロゴ帯 / 下=CTA帯。
+            面が背後で実 viewport を覆うので、main の高さが端数でも黒は出ない。 */}
         <main
           className="relative z-10 flex min-h-dvh flex-col justify-between min-[440px]:flex-1"
           style={{
