@@ -79,7 +79,7 @@ export default function FolkloreAnalysisPage() {
     <PCFrame mode="day" frameShadow="day">
       {/* tablet (768/1024) でも max-w-[402px] でモバイル列を維持。
           min-h-dvh で内容が長い場合スクロール、短い場合は viewport いっぱい */}
-      <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-dvh w-full max-w-[402px] flex-col">
+      <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-dvh w-full max-w-[402px] flex-col min-[440px]:min-h-full">
         {/* StatusBar — Figma 46:583: 9:41 を sumi-1 で表示。PC では非表示 */}
         <StatusBar className="text-sumi-1" />
 

@@ -335,7 +335,7 @@ function DawnSequence() {
   return (
     <PCFrame mode={pcframeMode}>
       <main
-        className="relative flex min-h-dvh w-full flex-col items-center justify-center"
+        className="relative flex min-h-dvh w-full flex-col items-center justify-center min-[440px]:min-h-full"
         style={{
           color: frame.text,
           transitionProperty: "color",
@@ -422,7 +422,7 @@ export default function GeneratingPage() {
         // 初期は dusk-1(明) だと PC で白い列が一瞬出るため、暗い夜色で始める。
         <PCFrame mode="night">
           <div
-            className="relative flex min-h-dvh w-full items-center justify-center"
+            className="relative flex min-h-dvh w-full items-center justify-center min-[440px]:min-h-full"
             style={{ color: DAWN_FRAMES[0].text }}
           >
             <div

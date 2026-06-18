@@ -23,14 +23,19 @@ type PCFrameProps = {
 
 export default function PCFrame({ mode, children }: PCFrameProps) {
   return (
-    <div data-pcframe-mode={mode} className="relative min-h-dvh w-full">
+    <div
+      data-pcframe-mode={mode}
+      className="relative flex min-h-dvh w-full flex-col min-[440px]:items-center min-[440px]:justify-center min-[440px]:py-10"
+    >
       <div
         className={
-          // 中央寄せ。≥440px で max-w-[402px] に絞り、yotogi-frame で額装(枠＋影)。
-          // overflow-hidden は付けない: story の sticky footer の固定ふるまいを
-          // 壊さないため(overflow を付けるとコラムが scroll container 化する)。
-          // 枠は box-shadow の内側 1px ストロークで表現する。
-          "yotogi-frame relative z-10 mx-auto min-h-dvh w-full min-[440px]:max-w-[402px]"
+          // 中央寄せ。≥440px で max-w-[402px] に絞り、固定の掛軸パネル化:
+          // 高さを viewport より低く束ね(余白は周囲の浮世絵 surround が見える)、
+          // overflow-y-auto でパネル自身を scroll container にする。これにより
+          // 長い怪談はパネル内でスクロールし、sticky footer はパネル下端に固定される。
+          // 額装は soft drop shadow(.yotogi-frame)のみで持ち上げる(ヘアラインの枠は無し)。
+          // <440px は min-h-dvh w-full のフルブリード(枠/影/丸角なし=従来どおり)。
+          "yotogi-frame relative z-10 mx-auto min-h-dvh w-full min-[440px]:h-[min(880px,calc(100dvh-5rem))] min-[440px]:min-h-0 min-[440px]:max-w-[402px] min-[440px]:overflow-y-auto min-[440px]:rounded-[28px]"
         }
       >
         {children}

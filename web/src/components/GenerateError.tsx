@@ -183,7 +183,7 @@ export default function GenerateError({
         className={`pointer-events-none absolute inset-0 -z-10 ${tokens.ground}`}
       />
       <div
-        className={`${tokens.bg} ${tokens.text} relative mx-auto flex min-h-dvh w-full max-w-[402px] flex-col`}
+        className={`${tokens.bg} ${tokens.text} relative mx-auto flex min-h-dvh w-full max-w-[402px] flex-col min-[440px]:min-h-full`}
       >
         <StatusBar className={`${tokens.statusBarText} lg:hidden`} />
 

@@ -21,7 +21,7 @@ export default function SplashPage() {
   return (
     <PCFrame mode="night">
       {/* スマホ画面 = 骸骨ビジュアル。w402 / 縦は min-h-dvh で伸縮 */}
-      <div className="relative mx-auto flex w-full min-h-dvh max-w-[402px] flex-col overflow-hidden">
+      <div className="relative mx-auto flex w-full min-h-dvh max-w-[402px] flex-col overflow-hidden min-[440px]:min-h-full">
         {/* 1) 地 — 暗い墨のグラデ。画像が出る前/失敗時もこの下地が見え、純黒ベタにならない。 */}
         <div
           aria-hidden="true"
@@ -61,7 +61,7 @@ export default function SplashPage() {
 
         {/* UI 階層 — safe-area を含めて配置。上=ロゴ帯 / 下=CTA帯 */}
         <main
-          className="relative z-10 flex min-h-dvh flex-col justify-between"
+          className="relative z-10 flex min-h-dvh flex-col justify-between min-[440px]:flex-1"
           style={{
             paddingTop: "env(safe-area-inset-top)",
             paddingBottom: "calc(40px + env(safe-area-inset-bottom))",

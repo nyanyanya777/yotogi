@@ -68,12 +68,6 @@
   --radius-none: 0px;
 }
 
-html {
-  /* スクロールバーの溝を常に確保し、ページ毎のスクロール有無で画面幅が変わって
-     固定背景が横ずれするのを防ぐ（home=非スクロール / motif等=スクロールの差）。 */
-  scrollbar-gutter: stable;
-}
-
 html,
 body {
   color: var(--color-offwhite-0);
@@ -160,7 +154,6 @@ html {
 @media (min-width: 440px) {
   .yotogi-frame {
     box-shadow:
-      0 0 0 1px rgba(200, 188, 158, 0.14),
       0 24px 70px -12px rgba(0, 0, 0, 0.72),
       0 8px 28px -8px rgba(0, 0, 0, 0.55);
   }
