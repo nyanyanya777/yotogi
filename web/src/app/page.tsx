@@ -69,8 +69,15 @@ export default function SplashPage() {
         >
           <div className="flex flex-col items-center">
             <StatusBar className="self-stretch" />
-            {/* hero — ロゴは上帯の上。Young Serif 80px / uppercase / 影で更に分離 */}
+            {/* hero — サブキャッチ(上)→ロゴ(下・大)の階層。Young Serif 80px / uppercase / 影で更に分離 */}
             <div className="flex flex-col items-center pt-[120px]">
+              {/* サブキャッチ — ロゴの上、上帯の上に階層を持って置く。 */}
+              <p
+                className="mb-4 text-center font-mincho text-[15px] leading-[1.8] text-offwhite-2"
+                style={{ textShadow: "0px 1px 8px rgba(0,0,0,0.7)" }}
+              >
+                怪談を生成するアプリ
+              </p>
               <h1
                 className="w-full text-center font-young text-[80px] uppercase leading-[0.9] text-white"
                 style={{
@@ -80,13 +87,6 @@ export default function SplashPage() {
               >
                 Yotogi
               </h1>
-              {/* タグライン — ロゴの下、上帯の上に階層を持って置く。 */}
-              <p
-                className="mt-4 text-center font-mincho text-[15px] leading-[1.8] text-offwhite-2"
-                style={{ textShadow: "0px 1px 8px rgba(0,0,0,0.7)" }}
-              >
-                夜に語り、昼に解く。
-              </p>
             </div>
           </div>
 
