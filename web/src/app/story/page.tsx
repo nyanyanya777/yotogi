@@ -94,11 +94,33 @@ function StoryReading() {
     if (s) setStory(s);
   }, [historyId, sharedToken, router]);
 
-  // 共有: 短いアプリURL + 「タイトル + さわり」のテキストを Web Share、非対応ならクリップボードへ。
-  // 怪談全文は URL に載せない（長すぎるため）。OG カードはアプリ既定の og:image が出る。
+  // 共有: 怪談本文をサーバ（Vercel Blob）に保存し、短い共有URL `/s/<id>` を払い出す。
+  // 受け手はその URL を開くと本文が復元・表示される（src/app/s/[id]/page.tsx）。
+  // 共有テキストは「タイトル + さわり」を Web Share、非対応ならクリップボードへ。
+  // 保存に失敗したらアプリトップ URL だけでフォールバック共有する。
   const handleShare = async () => {
     if (typeof window === "undefined") return;
-    const url = window.location.origin;
+    // 既定はアプリトップ（保存失敗時のフォールバック）。
+    let url = window.location.origin;
+    try {
+      const res = await fetch("/api/share", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          title: story.title,
+          body: story.body,
+          tags: loadTags() ?? [],
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { id?: unknown };
+        if (typeof data.id === "string" && data.id.length > 0) {
+          url = `${window.location.origin}/s/${data.id}`;
+        }
+      }
+    } catch {
+      // ネットワーク等で失敗 → フォールバック URL（アプリトップ）のまま共有を続ける。
+    }
     // 本文の冒頭を 1 行に均し、約 70 字で抜粋（超過時は末尾 … で省略）。
     const flat = story.body.replace(/\s+/g, " ").trim();
     const excerpt = flat.length > 70 ? `${flat.slice(0, 70)}…` : flat;
