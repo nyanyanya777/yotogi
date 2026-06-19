@@ -5,7 +5,7 @@ import RootBackground from "@/components/RootBackground";
 
 const title = "YOTOGI / ネットロア";
 const description =
-  "怪談を通じて民俗的記憶に触れるアプリ。夜に語り、昼に解く。";
+  "選んだモチーフから怪談を紡ぎ、その奥に潜む伝承の型まで解き明かす。AI時代の怪談";
 
 export const metadata: Metadata = {
   // NEXT_PUBLIC_SITE_URL 未設定時は undefined にし、Vercel本番URLを自動採用させる

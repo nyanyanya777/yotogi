@@ -358,16 +358,7 @@ function DawnSequence() {
           transitionTimingFunction: EASING,
         }}
       />
-      {/* スキップ (Esc) — a11y 脱出。 */}
-      <button
-        type="button"
-        onClick={handleSkip}
-        aria-label="生成を中止して戻る"
-        className="absolute right-4 top-4 rounded-full px-3 py-1 text-[12px] opacity-60 transition-opacity hover:opacity-100 focus:opacity-100 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-        style={{ color: frame.text, borderColor: frame.text }}
-      >
-        スキップ
-      </button>
+      {/* スキップボタンは廃止（生成演出は中断不可）。Esc キーでの脱出のみ a11y 用に残す。 */}
 
       {/* 漢字一字 — 画面中央。 */}
       <span
