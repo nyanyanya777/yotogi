@@ -30,6 +30,10 @@ export type LlmOpts = {
   json?: boolean;
   /** 最大出力トークン。default 1500 */
   maxTokens?: number;
+  /** サンプリング温度。語彙の揺らぎ用。未指定ならモデル既定。 */
+  temperature?: number;
+  /** nucleus サンプリング (top_p)。未指定なら設定しない。 */
+  topP?: number;
 };
 
 export type LlmCall = (
@@ -75,6 +79,8 @@ function makeAnthropicCall(model: string, defaultMaxTokens: number): LlmCall {
       system,
       userMessage: user,
       maxTokens: opts?.maxTokens ?? defaultMaxTokens,
+      temperature: opts?.temperature,
+      topP: opts?.topP,
     });
   };
 }
@@ -107,6 +113,8 @@ export async function callOllama(args: {
   userMessage: string;
   maxTokens?: number;
   json?: boolean;
+  temperature?: number;
+  topP?: number;
 }): Promise<string> {
   const base = args.baseUrl ?? getOllamaBase();
   const url = `${base.replace(/\/+$/, "")}/api/chat`;
@@ -121,6 +129,8 @@ export async function callOllama(args: {
     ],
     options: {
       num_predict: args.maxTokens ?? 1500,
+      ...(args.temperature !== undefined ? { temperature: args.temperature } : {}),
+      ...(args.topP !== undefined ? { top_p: args.topP } : {}),
     },
   };
   if (args.json) payload.format = "json";
@@ -170,6 +180,8 @@ function makeOllamaWithFallback(
         userMessage: user,
         maxTokens: opts?.maxTokens ?? defaultMaxTokens,
         json: opts?.json,
+        temperature: opts?.temperature,
+        topP: opts?.topP,
       });
     } catch (e) {
       if (isAnthropicAvailable()) {
@@ -181,6 +193,8 @@ function makeOllamaWithFallback(
           system,
           userMessage: user,
           maxTokens: opts?.maxTokens ?? defaultMaxTokens,
+          temperature: opts?.temperature,
+          topP: opts?.topP,
         });
       }
       throw e;

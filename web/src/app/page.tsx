@@ -32,7 +32,9 @@ export default function SplashPage() {
           }}
         />
 
-        {/* 2) 画像 — 骸骨(がしゃどくろ)。頭部を見せるため object-position を上寄せ、
+        {/* 2) 画像 — 骸骨(がしゃどくろ)。主役(骸骨＋武者)で画面を満たすため scale で
+            少し寄せ、object-position と transform-origin を骸骨に合わせる。これで上下端に出る
+            「空(上)/床(下)」の暗い余白が画面外へ送られ、実機(セーフエリア)でも黒帯に見えない。
             左右は主役が切れないよう中央。inset-0 で親の高さ確定に依存しない。
             LCP となるヒーロー画像なので fetchPriority="high" + eager で先読みヒントを与える。 */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -42,7 +44,7 @@ export default function SplashPage() {
           aria-hidden="true"
           fetchPriority="high"
           loading="eager"
-          className="absolute inset-0 z-[1] h-full w-full object-cover [object-position:50%_28%]"
+          className="absolute inset-0 z-[1] h-full w-full scale-[1.12] object-cover [object-position:50%_36%] [transform-origin:50%_36%]"
         />
 
         {/* 3) 可読スクリム — 上下の帯のみ(中央は素の骸骨)。
@@ -52,9 +54,10 @@ export default function SplashPage() {
           className="absolute inset-0 z-[2]"
           style={{
             background:
-              // smoothstep(3t²−2t³)で離散化した帯。透明区間との境界で傾きが0に収束するので、
-              // 濃淡の変曲点が横線(マッハバンド)として骸骨に出ない。上=ロゴ帯 / 下=CTA帯は維持。
-              "linear-gradient(180deg, rgba(11,11,11,0.72) 0%, rgba(11,11,11,0.676) 7%, rgba(11,11,11,0.564) 13%, rgba(11,11,11,0.414) 20%, rgba(11,11,11,0.253) 26%, rgba(11,11,11,0.112) 33%, rgba(11,11,11,0.020) 40%, rgba(11,11,11,0) 44%, rgba(11,11,11,0) 60%, rgba(11,11,11,0.052) 66%, rgba(11,11,11,0.186) 72%, rgba(11,11,11,0.366) 78%, rgba(11,11,11,0.557) 84%, rgba(11,11,11,0.726) 90%, rgba(11,11,11,0.836) 96%, rgba(11,11,11,0.86) 100%)",
+              // smoothstep(3t²−2t³)を2%刻みで離散化した帯。サンプリングを細かくし、
+              // 隣接ストップ間の傾き変化を知覚閾値以下に抑えることで、変曲点の横線(マッハバンド)を消す。
+              // 透明区間との境界(44%/60%)では傾きが0に収束。上=ロゴ帯 / 下=CTA帯は維持。
+              "linear-gradient(180deg, rgba(11,11,11,0.72) 0%, rgba(11,11,11,0.7157) 2%, rgba(11,11,11,0.7032) 4%, rgba(11,11,11,0.6835) 6%, rgba(11,11,11,0.6573) 8%, rgba(11,11,11,0.6253) 10%, rgba(11,11,11,0.5885) 12%, rgba(11,11,11,0.5477) 14%, rgba(11,11,11,0.5036) 16%, rgba(11,11,11,0.4571) 18%, rgba(11,11,11,0.409) 20%, rgba(11,11,11,0.36) 22%, rgba(11,11,11,0.311) 24%, rgba(11,11,11,0.2629) 26%, rgba(11,11,11,0.2164) 28%, rgba(11,11,11,0.1723) 30%, rgba(11,11,11,0.1315) 32%, rgba(11,11,11,0.0947) 34%, rgba(11,11,11,0.0627) 36%, rgba(11,11,11,0.0365) 38%, rgba(11,11,11,0.0168) 40%, rgba(11,11,11,0.0043) 42%, rgba(11,11,11,0) 44%, rgba(11,11,11,0) 60%, rgba(11,11,11,0.0062) 62%, rgba(11,11,11,0.0241) 64%, rgba(11,11,11,0.0522) 66%, rgba(11,11,11,0.0894) 68%, rgba(11,11,11,0.1344) 70%, rgba(11,11,11,0.1858) 72%, rgba(11,11,11,0.2423) 74%, rgba(11,11,11,0.3027) 76%, rgba(11,11,11,0.3657) 78%, rgba(11,11,11,0.43) 80%, rgba(11,11,11,0.4943) 82%, rgba(11,11,11,0.5573) 84%, rgba(11,11,11,0.6177) 86%, rgba(11,11,11,0.6742) 88%, rgba(11,11,11,0.7256) 90%, rgba(11,11,11,0.7706) 92%, rgba(11,11,11,0.8078) 94%, rgba(11,11,11,0.8359) 96%, rgba(11,11,11,0.8538) 98%, rgba(11,11,11,0.86) 100%)",
           }}
         />
 
@@ -66,7 +69,7 @@ export default function SplashPage() {
           className="relative z-10 flex min-h-dvh flex-col justify-between min-[440px]:flex-1"
           style={{
             paddingTop: "env(safe-area-inset-top)",
-            paddingBottom: "calc(40px + env(safe-area-inset-bottom))",
+            paddingBottom: "calc(24px + env(safe-area-inset-bottom))",
           }}
         >
           <div className="flex flex-col items-center">

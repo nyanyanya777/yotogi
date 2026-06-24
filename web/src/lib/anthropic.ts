@@ -72,6 +72,10 @@ export async function callClaude(args: {
   system: string;
   userMessage: string;
   maxTokens?: number;
+  /** 語彙の揺らぎ用。未指定ならモデル既定（≒1.0）。 */
+  temperature?: number;
+  /** nucleus サンプリング。未指定なら設定しない。 */
+  topP?: number;
 }): Promise<string> {
   const c = getAnthropicClient();
   if (!c) throw new Error("ANTHROPIC_API_KEY is not set");
@@ -81,6 +85,8 @@ export async function callClaude(args: {
     max_tokens: args.maxTokens ?? 1500,
     system: args.system,
     messages: [{ role: "user", content: args.userMessage }],
+    ...(args.temperature !== undefined ? { temperature: args.temperature } : {}),
+    ...(args.topP !== undefined ? { top_p: args.topP } : {}),
   });
 
   // content は { type: "text", text: string } の配列。
