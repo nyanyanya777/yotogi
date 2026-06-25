@@ -115,7 +115,12 @@ function StoryReading() {
       if (res.ok) {
         const data = (await res.json()) as { id?: unknown };
         if (typeof data.id === "string" && data.id.length > 0) {
-          url = `${window.location.origin}/s/${data.id}`;
+          // 固定クエリ `?s=1` を付与して共有する。OG 対応前に「クエリ無しの素 URL」を
+          // 貼った SNS（X / LINE 等）が「カード無し」状態をキャッシュし続けるため、
+          // 別のキャッシュキー（?s=1）にして初見扱いさせ、その場で新カードを取りに行かせる。
+          // 値は固定なので再シェアでも同一 URL（安定）。generateMetadata / opengraph-image は
+          // params のみ参照しクエリを無視するため、カード内容は変わらない。
+          url = `${window.location.origin}/s/${data.id}?s=1`;
         }
       }
     } catch {
