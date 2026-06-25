@@ -1,61 +1,42 @@
+import type React from "react";
+
 /**
- * PCFrame — PC レスポンシブ汎用ラッパー
+ * PCFrame — 額装モデルの「中央 402px 列 + 掛軸風フレーム(枠＋影)」を担う。
  *
- * 1024px 以上: bg画像 (実 <img>) + veil を全画面に敷き、中央 max-w-[402px] の
- *              モバイル画面を浮かせる（drop shadow）。
- * 1024px 未満: bg画像は `hidden` で非表示。モバイル画面はそのまま表示される。
+ * 周囲(フルブリード浮世絵 + 暗幕＋放射ビネット)は RootLayout 常駐の
+ * BackgroundLayer が全ルート統一で描く。ここは中央列を中央寄せし、
+ * 額装フレーム(細い内側ストローク + soft drop shadow)を付けて列を周囲から
+ * 持ち上げる(globals: .yotogi-frame ＝ ≥440px だけで効く media gate 済み)。
+ * 掛軸/額装の落ち着いたホラー寄りの質感。<440px はフルブリード(影/枠なし)。
  *
- * 実 <img> タグで SSR から bg が出るので、ハイドレーション前後で真っ黒にならない。
- * `loading=eager` で First Paint に間に合わせる。
+ * フレーミングは全ルート(このコンポーネントを使う全ページ)で UNIFORM。
+ * 列自身の地色(夜=墨 / 昼=和紙)は呼び出し側ページの内側 div が持つ。
  *
- * 仕様: /root/YOTOGI_IMPLEMENTATION_SPEC.md §3.6–3.9
+ * mode / frameShadow は呼び出し側の意図の目印として後方互換で受け取る
+ * (フレームの見た目は全ルート共通 .yotogi-frame に一本化)。
  */
 type PCFrameProps = {
   mode: "night" | "day";
-  bgImage: string;
+  frameShadow?: "night" | "day" | false;
   children: React.ReactNode;
 };
 
-export default function PCFrame({ mode, bgImage, children }: PCFrameProps) {
-  // 1024px 以上での veil 色
-  // night: sumi/0-black #0B0B0B @ 0.62
-  // day:   offwhite/0-base #F5F2EA @ 0.45
-  const veilClass =
-    mode === "night"
-      ? "bg-[rgba(11,11,11,0.62)]"
-      : "bg-[rgba(245,242,234,0.45)]";
-
-  // モバイル領域 drop shadow（夜=深い影で sink、昼=控えめな影で lift）
-  const shadowClass =
-    mode === "night"
-      ? "lg:shadow-[0_8px_48px_rgba(0,0,0,0.4)]"
-      : "lg:shadow-[0_4px_32px_rgba(20,15,10,0.12)]";
-
+export default function PCFrame({ mode, children }: PCFrameProps) {
   return (
     <div
       data-pcframe-mode={mode}
-      className="relative min-h-screen w-full"
+      className="relative flex min-h-dvh w-full flex-col min-[440px]:items-center min-[440px]:justify-center min-[440px]:py-10"
     >
-      {/* bg image — SSR で <img> として出るので JS なしで First Paint に間に合う。
-          z-0 で body bg-sumi-0 (layout.tsx) より上に出す */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={bgImage}
-        alt=""
-        aria-hidden="true"
-        loading="eager"
-        className="pointer-events-none fixed inset-0 z-0 hidden h-full w-full object-cover lg:block"
-      />
-
-      {/* veil — bg画像の上、コンテンツの下 */}
       <div
-        aria-hidden="true"
-        className={`pointer-events-none fixed inset-0 z-[1] hidden lg:block ${veilClass}`}
-      />
-
-      {/* 中央モバイル領域 — lg 以上で max-w-[402px] mx-auto と shadow */}
-      <div
-        className={`relative z-10 mx-auto w-full lg:max-w-[402px] ${shadowClass}`}
+        className={
+          // 中央寄せ。≥440px で max-w-[402px] に絞り、固定の掛軸パネル化:
+          // 高さを viewport より低く束ね(余白は周囲の浮世絵 surround が見える)、
+          // overflow-y-auto でパネル自身を scroll container にする。これにより
+          // 長い怪談はパネル内でスクロールし、sticky footer はパネル下端に固定される。
+          // 額装は soft drop shadow(.yotogi-frame)のみで持ち上げる(ヘアラインの枠は無し)。
+          // <440px は min-h-dvh w-full のフルブリード(枠/影/丸角なし=従来どおり)。
+          "yotogi-frame relative z-10 mx-auto min-h-dvh w-full min-[440px]:h-[min(880px,calc(100dvh-5rem))] min-[440px]:min-h-0 min-[440px]:max-w-[402px] min-[440px]:overflow-y-auto min-[440px]:rounded-[28px]"
+        }
       >
         {children}
       </div>

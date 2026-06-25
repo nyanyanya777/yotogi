@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@400;500;600;700;800&family=Young+Serif&display=swap");
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------
@@ -60,6 +60,7 @@
     Arial, sans-serif;
   --font-mincho: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho",
     "Noto Serif JP", serif;
+  --font-young: "Young Serif", "Shippori Mincho", serif;
 
   /* Radii — chip / card / none */
   --radius-chip: 20px;
@@ -69,9 +70,91 @@
 
 html,
 body {
-  background: var(--color-sumi-0);
   color: var(--color-offwhite-0);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* iOS ゴムバンド(オーバースクロール)で地の外の黒が露出するのを封じる。
+     チェーン(親へのスクロール伝播)とグロー/バウンス両方を止める。 */
+  overscroll-behavior: none;
+}
+
+/* ハイドレーション前の初期描画フォールバックの地は html(最背面のキャンバス)に置く。
+   body は透明にし、地は RootBackground / 各ページの fixed 層(-z-10/遷移色)が担う。
+   body を塗ると -z-10 の地レイヤーがその下に隠れて遷移色が出ないため、body は塗らない。 */
+html {
+  background: var(--color-sumi-0);
+}
+
+/* ---------------------------------------------------------------
+   Night loader — 怪談生成（タグ→怪談）の「夜に入っていく」待機演出。
+   dawn の4コマ夜明けは使わず、暗い夕闇のトーンで静かに息づくだけ。
+   明るくしない／夜明けにしない。すべて sumi 系トークン経由。
+   --------------------------------------------------------------- */
+
+/* 漢字「怪」が深く沈んでまた浮く、緩やかな呼吸。 */
+@keyframes yotogi-night-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+/* 細い線の上を、ほのかな明かりが左から右へ流れる。 */
+@keyframes yotogi-night-drift {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+.yotogi-night-breathe {
+  animation: yotogi-night-breathe 3.2s ease-in-out infinite;
+}
+
+.yotogi-night-drift {
+  animation: yotogi-night-drift 2.4s ease-in-out infinite;
+}
+
+/* reduced-motion: 動きを止め、静かな夕闇のまま見せる。 */
+@media (prefers-reduced-motion: reduce) {
+  .yotogi-night-breathe,
+  .yotogi-night-drift {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------
+   PC(≥440px) 額装フレーミング — 全ルート統一の周囲＆掛軸風コラム枠。
+   周囲: フルブリード浮世絵を強く減光＋ブラー＋放射ビネットで継ぎ目を消し、
+   中央 402px 列を浮かせる。すべてセマンティックトークン/sumi 系で構成し
+   直 hex はここ(globals)に集約する(コンポーネント側は class 参照のみ)。
+   --------------------------------------------------------------- */
+
+/* 周囲の浮世絵を覆う暗幕 — 中心やや明・四隅は深い墨へ落とす放射ビネット。
+   これ一枚で画像の継ぎ目/トリミング線を知覚不能にし、中央列を引き立てる。 */
+.yotogi-surround-veil {
+  background:
+    radial-gradient(
+      120% 100% at 50% 42%,
+      rgba(11, 11, 11, 0.42) 0%,
+      rgba(11, 11, 11, 0.62) 48%,
+      rgba(11, 11, 11, 0.86) 100%
+    );
+}
+
+/* 掛軸/額装の枠 — 細い内側ストローク + 定義された soft drop shadow で
+   中央 402px 列を周囲から持ち上げる。ホラー寄りの落ち着いたトーン。
+   ≥440px だけで効かせる(モバイルはフルブリードで枠/影なし=現状維持)。 */
+@media (min-width: 440px) {
+  .yotogi-frame {
+    box-shadow:
+      0 24px 70px -12px rgba(0, 0, 0, 0.72),
+      0 8px 28px -8px rgba(0, 0, 0, 0.55);
+  }
 }

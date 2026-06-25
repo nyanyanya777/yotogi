@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import StatusBar from "@/components/StatusBar";
 import ChevronLeftIcon from "@/components/ChevronLeftIcon";
 import PCFrame from "@/components/PCFrame";
-import FolkloreGlosses from "@/components/FolkloreGlosses";
+import PrimaryCTA from "@/components/PrimaryCTA";
 import {
+  clearFolklore,
+  clearStory,
   loadFolklore,
   loadStory,
+  loadTags,
   type StoredFolklore,
 } from "@/lib/yotogiStorage";
 
@@ -38,6 +42,7 @@ const FALLBACK_FOLKLORE: StoredFolklore = {
 };
 
 export default function FolkloreAnalysisPage() {
+  const router = useRouter();
   const [title, setTitle] = useState<string>(FALLBACK_TITLE);
   const [excerpt, setExcerpt] = useState<string>(FALLBACK_EXCERPT);
   const [folklore, setFolklore] = useState<StoredFolklore>(FALLBACK_FOLKLORE);
@@ -45,6 +50,12 @@ export default function FolkloreAnalysisPage() {
   useEffect(() => {
     // SSR で fallback を描画して hydration mismatch を避けるため、
     // localStorage 読み込みは意図的に effect 内で行う
+
+    // 空状態ガード: 怪談も解説も無いまま直接来た場合は /motif へ誘導
+    if (!loadStory() && !loadFolklore() && !loadTags()) {
+      router.replace("/motif");
+      return;
+    }
     const s = loadStory();
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (s?.title) setTitle(s.title);
@@ -52,13 +63,11 @@ export default function FolkloreAnalysisPage() {
       // night-fragment は collapsed-body として先頭付近のみ表示する。
       // 本文先頭から 2 段落程度を 1 行に圧縮して見せる
       const cleaned = s.body.split(/\n\n+/).slice(0, 2).join(" ");
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExcerpt(cleaned);
     }
     const f = loadFolklore();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (f) setFolklore(f);
-  }, []);
+  }, [router]);
 
   const sections: { label: string; body: string }[] = [
     { label: "【伝承の型】", body: folklore.denshou_no_kata },
@@ -67,20 +76,19 @@ export default function FolkloreAnalysisPage() {
   ];
 
   return (
-    <PCFrame mode="day" bgImage="/images/scholar-desk.jpg">
-      <FolkloreGlosses />
+    <PCFrame mode="day" frameShadow="day">
       {/* tablet (768/1024) でも max-w-[402px] でモバイル列を維持。
-          min-h-screen で内容が長い場合スクロール、短い場合は viewport いっぱい */}
-      <div className="bg-offwhite-0 lg:bg-offwhite-0/85 text-sumi-1 mx-auto flex min-h-screen w-full max-w-[402px] flex-col">
+          min-h-dvh で内容が長い場合スクロール、短い場合は viewport いっぱい */}
+      <div className="bg-offwhite-0 text-sumi-1 mx-auto flex min-h-dvh w-full max-w-[402px] flex-col min-[440px]:min-h-full">
         {/* StatusBar — Figma 46:583: 9:41 を sumi-1 で表示。PC では非表示 */}
-        <StatusBar className="text-sumi-1 lg:hidden" />
+        <StatusBar className="text-sumi-1" />
 
         {/* Header Type (46:589) — h-44, "解説" 中央、戻る chevron 左端 */}
         <nav className="relative flex h-11 items-center">
           <Link
             href="/story"
             aria-label="戻る"
-            className="absolute left-4 flex h-6 w-6 items-center justify-center text-sumi-1 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
+            className="absolute left-1.5 flex h-11 w-11 items-center justify-center rounded-full text-sumi-1 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
           >
             <ChevronLeftIcon />
           </Link>
@@ -128,7 +136,7 @@ export default function FolkloreAnalysisPage() {
             {/* collapsed-body — body excerpt with fade-overlay。
                 opacity でコントラスト不足になるので text-offwhite-2 直指定 (AA 5.8:1) */}
             <div className="relative">
-              <p className="font-sans text-[14px] font-normal leading-[1.7] text-offwhite-2">
+              <p className="font-sans text-[16px] font-normal leading-[1.7] text-offwhite-2">
                 {excerpt}
               </p>
               {/* fade-overlay — bottom 60px gradient to #1A1A1A */}
@@ -196,13 +204,27 @@ export default function FolkloreAnalysisPage() {
                   <p className="font-mincho text-[16px] leading-[1.9] text-benigara">
                     {sec.label}
                   </p>
-                  <p className="font-sans text-[14px] font-normal leading-[1.7] text-sumi-1">
+                  <p className="font-sans text-[16px] font-normal leading-[1.7] text-sumi-1">
                     {sec.body}
                   </p>
                 </div>
               ))}
             </div>
           </section>
+
+          {/* 再生成する — タグ選択からやり直す。現在の怪談/解説をクリアして
+              /motif へ。新しいモチーフ3つで一から作り直す導線。 */}
+          {/* 統一 CTA（primary）。mt-2 でセクションからの間隔だけ付与 */}
+          <PrimaryCTA
+            label="再生成する"
+            variant="primary"
+            className="mt-2"
+            onClick={() => {
+              clearStory();
+              clearFolklore();
+              router.push("/motif");
+            }}
+          />
         </main>
       </div>
     </PCFrame>

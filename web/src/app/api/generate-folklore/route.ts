@@ -30,6 +30,16 @@ import {
   buildFolkloreUserMessage,
   buildFolkloreVerifierUserMessage,
 } from "@/lib/prompts";
+import {
+  MAX_BODY_LEN,
+  MAX_REQUEST_BYTES,
+  MAX_TAG_LEN,
+  MAX_TITLE_LEN,
+  checkRateLimit,
+  isRequestTooLarge,
+  isStrWithin,
+  tooManyRequests,
+} from "@/lib/apiGuards";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,14 +50,26 @@ function isStringTriple(x: unknown): x is [string, string, string] {
   return (
     Array.isArray(x) &&
     x.length === 3 &&
-    x.every((v) => typeof v === "string" && v.trim().length > 0)
+    x.every((v) => isStrWithin(v, MAX_TAG_LEN))
   );
 }
 
 export async function POST(req: NextRequest) {
+  // 濫用対策（コスト/DoS）: レート制限 → リクエスト肥大の早期拒否。
+  const rl = checkRateLimit(req);
+  if (!rl.ok) return tooManyRequests(rl.retryAfter);
+  if (isRequestTooLarge(req)) {
+    return Response.json({ error: "payload too large" }, { status: 413 });
+  }
+
   let parsed: Body;
   try {
-    parsed = (await req.json()) as Body;
+    // content-length に依存せず本文サイズを上限で弾く（チャンク送信対策）。
+    const raw = await req.text();
+    if (raw.length > MAX_REQUEST_BYTES) {
+      return Response.json({ error: "payload too large" }, { status: 413 });
+    }
+    parsed = JSON.parse(raw) as Body;
   } catch {
     return Response.json({ error: "invalid json body" }, { status: 400 });
   }
@@ -58,9 +80,12 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (typeof parsed.title !== "string" || typeof parsed.body !== "string") {
+  if (
+    !isStrWithin(parsed.title, MAX_TITLE_LEN) ||
+    !isStrWithin(parsed.body, MAX_BODY_LEN)
+  ) {
     return Response.json(
-      { error: "title and body must be strings" },
+      { error: "title/body missing or too long" },
       { status: 400 },
     );
   }

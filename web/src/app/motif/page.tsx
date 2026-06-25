@@ -1,60 +1,150 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import StatusBar from "@/components/StatusBar";
 import Chip from "@/components/Chip";
 import PrimaryCTA from "@/components/PrimaryCTA";
 import PCFrame from "@/components/PCFrame";
 import { saveTags, clearStory, clearFolklore } from "@/lib/yotogiStorage";
+import { maybeCorruptTagMap } from "@/lib/corruption";
 
 /**
  * MotifSelection (Screen#MotifSelection, Figma 15:1011)
- * 舞台/存在/属性 を1画面で選択する。
+ * 舞台/存在/現象/時/物/人物・関係/展開・仕組み を1画面で選択する。
  * - チップは toggle、カテゴリ跨ぎで合計3つ選ぶ
  * - 3つ揃ったら CTA active
- * 仕様: §3.2 / Figma 最新版 16語彙（舞台6・存在5・属性5）
+ * - 凸（肝試し）骨格に偏らないよう、日常侵食の舞台と「人物・関係」「展開・仕組み」軸を追加。
+ *   選んだチップ文字列はそのまま tags として generate-story → buildStoryUserMessage →
+ *   buildStorySystem の声/リビール/オチ/尺 steer のハッシュ入力に流れる（配線一貫）。
  */
 
 const CATEGORIES = [
   {
-    label: "舞台",
+    label: "舞台・場所",
     chips: [
-      "学校・施設",
-      "水辺・井戸・海",
-      "山・峠・トンネル",
-      "村・密み地",
-      "ネット・電子空間",
-      "病院・架橋空間",
+      "学校・教室",
+      "廃病院",
+      "トンネル",
+      "山道・峠",
+      "海・浜辺",
+      "古井戸",
+      "神社・祠",
+      "廃屋",
+      "団地・社宅",
+      "エレベーター",
+      "踏切",
+      "地下道",
+      // 日常侵食系（出かける先に偏らないよう「居る場所」を追加）
+      "自室・ワンルーム",
+      "職場・オフィス",
+      "通勤電車",
+      "深夜のコンビニ",
     ],
   },
   {
     label: "存在",
     chips: [
-      "女の霊・悪霊",
-      "子ども・赤子の霊",
-      "異形・正体不明",
-      "人形・像",
-      "人間（生身の怖さ）",
+      "女の霊",
+      "子どもの霊",
+      "老婆の霊",
+      "のっぺらぼう",
+      "首吊りの影",
+      "落ち武者",
+      "古い人形",
+      "座敷童",
+      "黒い人影",
+      "海坊主",
+      "山の神",
+      "異形のもの",
+      "そっくりな誰か",
     ],
   },
   {
-    label: "属性",
+    label: "現象",
     chips: [
-      "呪い・祟り",
-      "錯乱（見えなくなる）",
-      "過去・繰り代わる",
-      "憑依・伏願目取",
-      "神隠し・行方不明",
+      "呪い",
+      "祟り",
+      "神隠し",
+      "憑依",
+      "つけてくる",
+      "数が増える",
+      "入れ替わる",
+      "時間のズレ",
+      "記憶が欠ける",
+      "声が聞こえる",
+      "強い視線",
+      "鏡像が動く",
+      "正夢・予知",
+    ],
+  },
+  {
+    label: "時・条件",
+    chips: [
+      "丑三つ時",
+      "逢魔が時",
+      "雨の夜",
+      "盆・彼岸",
+      "大晦日の夜",
+      "真夜中の電話",
+    ],
+  },
+  {
+    label: "きっかけ・物",
+    chips: [
+      "拾い物",
+      "古い写真",
+      "合わせ鏡",
+      "開かずの間",
+      "読めない手紙",
+      "禁じられた場所",
+    ],
+  },
+  {
+    // 凸（肝試し）骨格から降りるための「誰が」軸（tags_final「人物・関係」軸より）
+    label: "人物・関係",
+    chips: [
+      "一人で",
+      "二人連れ",
+      "数人のグループ",
+      "家族・親子",
+      "見知らぬ人",
+      "職場の同僚・先輩",
+      "霊感の強い友人",
+      "祖父母の昔語り",
+    ],
+  },
+  {
+    // 話の仕組み軸（tags_final「展開・仕組み」軸より）。凸以外の入り口を用意する
+    label: "展開・仕組み",
+    chips: [
+      "日常への侵食",
+      "単独で遭遇",
+      "伝聞・又聞き",
+      "因縁・家族の祟り",
+      "肝試し・凸",
+      "ネット・掲示板",
+      "後日譚で判明",
+      "じわじわ追ってくる",
     ],
   },
 ] as const;
+
+// 16 語彙のフラット一覧（タグ文字化けの抽選母集団）。
+const ALL_LABELS: string[] = CATEGORIES.flatMap((c) => [...c.chips]);
 
 const REQUIRED = 3;
 
 export default function MotifSelectionPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<string[]>([]);
+  // ネットロアの呪い: 約 1/10 で 16 個中 1 つのタグが文字化けする。
+  // SSR と差異が出るため mount 後にのみ適用（hydration mismatch 回避）。
+  const [corruptMap, setCorruptMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCorruptMap(maybeCorruptTagMap(ALL_LABELS));
+  }, []);
 
   const toggle = (label: string) => {
     setSelected((prev) => {
@@ -81,25 +171,19 @@ export default function MotifSelectionPage() {
   }, [selected, count]);
 
   return (
-    <PCFrame mode="night" bgImage="/images/ukiyoe-takiyasha.jpg">
-      {/* min-h-screen で portrait は普通に縦長、landscape では自然スクロール。
+    <PCFrame mode="night" frameShadow="night">
+      {/* min-h-dvh で portrait は普通に縦長、landscape では自然スクロール。
           BottomBar の position:sticky bottom-0 はページ自体のスクロールに対し効く */}
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[402px] flex-col bg-sumi-0 lg:bg-transparent">
-        <StatusBar className="lg:hidden" />
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[402px] flex-col bg-sumi-0 min-[440px]:min-h-full">
+        <StatusBar className="" />
 
         {/* NavBar — Figma 15:1019: px-20 py-16, justify-between */}
         <div className="flex items-center justify-between px-5 py-4">
           <button
             type="button"
-            onClick={() => {
-              if (typeof window !== "undefined" && window.history.length > 2) {
-                router.back();
-              } else {
-                router.replace("/");
-              }
-            }}
+            onClick={() => router.push("/")}
             aria-label="戻る"
-            className="flex h-6 w-6 items-center justify-center text-offwhite-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
+            className="-ml-2.5 flex h-11 w-11 items-center justify-center rounded-full text-offwhite-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-accent"
           >
             <svg
               width="24"
@@ -145,21 +229,30 @@ export default function MotifSelectionPage() {
               </h2>
               {/* chip-grid — gap-12 wrap */}
               <div className="flex flex-wrap gap-3">
-                {cat.chips.map((chip) => (
-                  <Chip
-                    key={chip}
-                    label={chip}
-                    selected={selected.includes(chip)}
-                    onClick={() => toggle(chip)}
-                  />
-                ))}
+                {cat.chips.map((chip) => {
+                  // 呪いが乗ったラベルは表示も選択値も文字化け版に差し替える。
+                  const label = corruptMap[chip] ?? chip;
+                  const isSelected = selected.includes(label);
+                  return (
+                    <Chip
+                      key={chip}
+                      label={label}
+                      selected={isSelected}
+                      disabled={isReady && !isSelected}
+                      onClick={() => toggle(label)}
+                    />
+                  );
+                })}
               </div>
             </section>
           ))}
         </div>
 
         {/* BottomBar — Figma 15:1071: bg sumi-0, gap-12, p-16 */}
-        <div className="sticky bottom-0 left-0 right-0 z-10 mx-auto flex w-full max-w-[402px] flex-col gap-3 bg-sumi-0 p-4">
+        <div
+          className="sticky bottom-0 left-0 right-0 z-10 mx-auto flex w-full max-w-[402px] flex-col gap-3 bg-sumi-0 px-4 pt-4"
+          style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+        >
           {/* SelectionSummary — Noto Sans Regular 14 leading 1.7, gap-4, divider sumi-divider */}
           <div className="flex flex-wrap items-center gap-1 font-sans text-[14px] leading-[1.7]">
             {summaryParts.length === 0 ? (
@@ -184,7 +277,6 @@ export default function MotifSelectionPage() {
           <PrimaryCTA
             label="怪談を作る"
             disabled={!isReady}
-            fullWidth
             onClick={() => {
               if (!isReady) return;
               saveTags(selected);
